@@ -46,5 +46,4 @@ jobs:
       - name: SSH to the host and run the executable
         run: |
           ssh -i ~/.ssh/oracle "ubuntu@${{ secrets.ORACLE_HOST }}"
-          kill -9 `lsof -t -i:8000`
           ~/app
