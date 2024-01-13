@@ -37,7 +37,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.ORACLE_SSH_KEY }}" > ~/.ssh/oracle
           chmod 600 ~/.ssh/oracle
-          ssh-keygen -R "{{ secrets.ORACLE_HOST }}"
+          ssh-keygen -R "{{ secrets.ORACLE_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Copy the executable to the host
         run: |
