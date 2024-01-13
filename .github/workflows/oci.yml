@@ -29,7 +29,7 @@ jobs:
 
       - name: Build the project
         run: |
-          pyinstaller app.py --onefile
+          pyinstaller app.py --onefile --target-architecture x86_64
 
       - name: Set up SSH key
         run: |
@@ -42,3 +42,9 @@ jobs:
       - name: Copy the executable to the host
         run: |
           scp -i ~/.ssh/oracle ./dist/app "ubuntu@${{ secrets.ORACLE_HOST }}:/home/ubuntu/"
+
+      - name: SSH to the host and run the executable
+        run: |
+          ssh -i ~/.ssh/oracle "ubuntu@${{ secrets.ORACLE_HOST }}"
+          kill -9 `lsof -t -i:8000`
+          ~/app
