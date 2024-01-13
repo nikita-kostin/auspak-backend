@@ -154,6 +154,30 @@ def me(current_user: User = Depends(get_current_user)):
 def create_chat(user_id: int, current_user: User = Depends(get_current_user)):
     # Check if the current user is a driver
     if current_user.entity == UserEntity.driver:
+        # Query the user table with the 2nd user id
+        response = supabase.table("users").select("entity").eq("id", user_id).execute()
+        # Check if response has data
+        if response.data:
+            # Check if the 2nd user is a driver
+            if response.data[0]["entity"] == UserEntity.driver.value:
+                # Raise an exception if the 2nd user is a driver
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Drivers cannot create chats with other drivers",
+                )
+        else:
+            # Raise an exception if user not found
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No user with given id found"
+            )
+        # Check if the chat between the users already exists
+        # Query the chat table with driver and user id
+        response = supabase.table("chats").select("*").eq("driver_id", current_user.id).eq("user_id", user_id).execute()
+        # Check if response has data
+        if response.data:
+            # Return the existing chat id
+            return {"chat_id": response.data[0]["id"]}
         # Insert the chat data into the chat table
         response = supabase.table("chats").insert([{
             "driver_id": current_user.id,
