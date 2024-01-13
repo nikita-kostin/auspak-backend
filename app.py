@@ -421,7 +421,7 @@ def get_statistics(current_user: User = Depends(get_current_user)):
     return {"statistics": "TBD"}
 
 
-@app.get("/points_sorted")
+@app.get("/points")
 def get_points_sorted(current_user: User = Depends(get_current_user), lat: float = 0, long: float = 0):
     response = supabase.rpc('nearby_points', {"lat": lat, "long": long}).execute()
     return {"points": response.data}
@@ -448,14 +448,6 @@ def create_point(current_user: User = Depends(get_current_user), loc_id: int = 0
 def get_points_in_range(current_user: User = Depends(get_current_user), min_lat: float = 0, min_long: float = 0, max_lat: float = 0, max_long: float = 0):
     response = supabase.rpc('points_in_range', {"min_lat": min_lat, "min_long": min_long, "max_lat": max_lat, "max_long": max_long}).execute()
     return {"points": response.data}
-
-
-
-# @app.get("/optimal_route/{bus_id}")
-# def get_route(current_user: User = Depends(get_current_user), bus_id: int = 0, ):
-
-    # response = supabase.rpc('get_route', {"bus_id": bus_id}).execute()
-    # return {"route": response.data}
 
 
 
