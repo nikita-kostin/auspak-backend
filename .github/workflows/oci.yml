@@ -51,5 +51,7 @@ jobs:
           ssh -i ~/.ssh/oracle "ubuntu@${{ secrets.ORACLE_HOST }}" << END
             export SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             export SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
-            screen -dmS auspak "source ~/auspak/venv/bin/activate && python3 ~/auspak/app.py"
+            screen -s "/bin/bash" -dmS auspak
+            screen -S auspak -X stuff "source ~/auspak/venv/bin/activate\n"
+            screen -S auspak -X stuff "python3 ~/auspak/app.py\n"
           END
