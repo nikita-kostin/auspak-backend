@@ -27,7 +27,7 @@ jobs:
 
       - name: Stop the app and clean up
         run: |
-          ssh -i ~/.ssh/oracle "ubuntu@${{ secrets.ORACLE_HOST }}" -f << END
+          ssh -i ~/.ssh/oracle "ubuntu@${{ secrets.ORACLE_HOST }}" << END
             screen -XS auspak quit
             rm -rf ~/auspak
             mkdir ~/auspak
@@ -39,7 +39,7 @@ jobs:
 
       - name: Set up dependencies
         run: |
-          ssh -i ~/.ssh/oracle "ubuntu@${{ secrets.ORACLE_HOST }}" -f << END
+          ssh -i ~/.ssh/oracle "ubuntu@${{ secrets.ORACLE_HOST }}" << END
             python3 -m venv ~/auspak/venv
             source ~/auspak/venv/bin/activate
             python3 -m pip install --upgrade pip
