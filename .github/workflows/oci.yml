@@ -35,9 +35,8 @@ jobs:
         run: |
           env
           mkdir -p ~/.ssh
-          echo "${{ secrets.ORACLE_SSH_KEY }}" > ~/.ssh/oracle.pub
-          chmod 600 ~/.ssh/oracle.pub
-          ssh-keyscan -p 22 -t rsa ${{ secrets.ORACLE_HOST }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.ORACLE_SSH_KEY }}" > ~/.ssh/oracle
+          chmod 600 ~/.ssh/oracle
 
       - name: Copy the executable to the host
         run: |
