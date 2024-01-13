@@ -452,6 +452,7 @@ def get_points_in_range(current_user: User = Depends(get_current_user), min_lat:
 
 
 if __name__ == "__main__":
+    # Testing GitHub actions trigger
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-p",
