@@ -404,6 +404,11 @@ def get_points_sorted(current_user: User = Depends(get_current_user), lat: float
     return {"points": response.data}
 
 
+@app.get("/points/{point_id}")
+def get_point(current_user: User = Depends(get_current_user), p_id: int = 0):
+    response = supabase.rpc('get_points', {"p_id": p_id}).execute()
+    return {"point": response.data}
+
 
 #TODO: debug this endpoint
 # @app.put("/points/{point_id}")
