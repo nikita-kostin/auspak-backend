@@ -5,15 +5,20 @@ on:
     inputs:
       port:
         required: true
+        type: string
     secrets:
       ssh_key:
         required: true
+        type: string
       host:
         required: true
+        type: string
       supabase_url:
         required: true
+        type: string
       supabase_key:
         required: true
+        type: string
 
 permissions:
   contents: read
