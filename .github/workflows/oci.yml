@@ -45,3 +45,11 @@ jobs:
             python3 -m pip install --upgrade pip
             pip install -r ~/auspak/requirements.txt
           END
+
+      - name: Run the app
+        run: |
+          ssh -i ~/.ssh/oracle "ubuntu@${{ secrets.ORACLE_HOST }}" << END
+            export SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            export SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+            screen -dmS auspak "python3 -m venv ~/auspak/venv && python3 ~/auspack/app.py"
+          END
