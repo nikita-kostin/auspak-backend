@@ -41,4 +41,5 @@ jobs:
 
       - name: Copy the executable to the host
         run: |
+          cat ~/.ssh/known_hosts
           scp -i ~/.ssh/oracle ./dist/app "ubuntu@${{ secrets.ORACLE_HOST }}:/home/ubuntu/"
