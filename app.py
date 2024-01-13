@@ -1,4 +1,5 @@
 # Import the required modules
+import argparse
 import logging
 import os
 import uvicorn
@@ -450,7 +451,17 @@ def get_points_in_range(current_user: User = Depends(get_current_user), min_lat:
     return {"points": response.data}
 
 
-
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-p",
+        "--port",
+        dest="port",
+        type=int,
+        default=8000,
+        help="Port to run the application on"
+    )
+    args = parser.parse_args()
+
     logging.basicConfig(filename='app.log', level=logging.INFO)
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=args.port)
