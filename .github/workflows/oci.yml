@@ -35,7 +35,7 @@ jobs:
 
       - name: Push repo to the host
         run: |
-          scp -i ~/.ssh/oracle -r ./ "ubuntu@${{ secrets.ORACLE_HOST }}:/home/ubuntu/auspak"
+          scp -i ~/.ssh/oracle -r ./* "ubuntu@${{ secrets.ORACLE_HOST }}:/home/ubuntu/auspak"
 
       - name: Set up dependencies
         run: |
