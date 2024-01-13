@@ -1,0 +1,16 @@
+name: Action on new commits to PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  deploy-to-dev:
+    uses: ./.github/workflows/deploy-to-vm.yml
+    with:
+      port: 8001
+    secrets:
+      ssh_key: ${{ secrets.ORACLE_SSH_KEY }}
+      host: ${{ secrets.ORACLE_HOST }}
+      supabase_url: ${{ secrets.SUPABASE_URL }}
+      supabase_key: ${{ secrets.SUPABASE_KEY }}

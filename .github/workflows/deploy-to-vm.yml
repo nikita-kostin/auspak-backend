@@ -1,0 +1,68 @@
+name: Deploy application to VM
+
+on:
+  workflow_call:
+    inputs:
+      port:
+        required: true
+    secrets:
+      ssh_key:
+        required: true
+      host:
+        required: true
+      supabase_url:
+        required: true
+      supabase_key:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up SSH key
+        run: |
+          env
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ssh_key }}" > ~/.ssh/oracle
+          chmod 600 ~/.ssh/oracle
+          ssh-keyscan -p 22 -t ed25519 ${{ secrets.host }} >> ~/.ssh/known_hosts
+
+      - name: Stop the app and clean up
+        run: |
+          ssh -i ~/.ssh/oracle "ubuntu@${{ secrets.host }}" << END
+            screen -XS auspak_${{ inputs.port }} quit
+            rm -rf ~/auspak
+            mkdir ~/auspak
+          END
+
+      - name: Push repo to the host
+        run: |
+          scp -i ~/.ssh/oracle -r ./* "ubuntu@${{ secrets.host }}:/home/ubuntu/auspak"
+
+      - name: Set up dependencies
+        run: |
+          ssh -i ~/.ssh/oracle "ubuntu@${{ secrets.host }}" << END
+            python3 -m venv ~/auspak/venv
+            source ~/auspak/venv/bin/activate
+            python3 -m pip install --upgrade pip
+            pip install -r ~/auspak/requirements.txt
+          END
+
+      - name: Run the app
+        run: |
+          ssh -i ~/.ssh/oracle "ubuntu@${{ secrets.host }}" << END
+            export SUPABASE_URL=${{ secrets.supabase_url }}
+            export SUPABASE_KEY=${{ secrets.supabase_key }}
+            screen -s "/bin/bash" -dmS auspak_${{ inputs.port }}
+            screen -S auspak_${{ inputs.port }} -X stuff "source ~/auspak/venv/bin/activate\n"
+            screen -S auspak_${{ inputs.port }} -X stuff "python3 ~/auspak/app.py --port ${{ inputs.port }}\n"
+          END

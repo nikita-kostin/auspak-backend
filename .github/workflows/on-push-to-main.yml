@@ -1,0 +1,16 @@
+name: Action on PR push to main
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy-to-dev:
+    uses: ./.github/workflows/deploy-to-vm.yml
+    with:
+      port: 8000
+    secrets:
+      ssh_key: ${{ secrets.ORACLE_SSH_KEY }}
+      host: ${{ secrets.ORACLE_HOST }}
+      supabase_url: ${{ secrets.SUPABASE_URL }}
+      supabase_key: ${{ secrets.SUPABASE_KEY }}
