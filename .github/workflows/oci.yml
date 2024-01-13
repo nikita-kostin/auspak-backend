@@ -1,0 +1,44 @@
+name: Deploy to Oracle Cloud Infrastructure
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ./requirements.txt
+
+      - name: Build the project
+        run: |
+          pyinstaller app.py --onefile
+
+      - name: Set up SSH key
+        run: |
+          env
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ORACLE_SSH_KEY }}" > ~/.ssh/oracle.pub
+          chmod 600 ~/.ssh/oracle.pub
+          ssh-keyscan -p 22 -t oracle ${{ secrets.ORACLE_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy the executable to the host
+        run: |
+          scp -i ~/.ssh/oracle.pub ./dist/app ubuntu@${{ secrets.ORACLE_HOST }}:/home/ubuntu/
