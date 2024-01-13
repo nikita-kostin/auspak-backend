@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  deploy-to-dev:
+  deploy-to-prod:
     uses: ./.github/workflows/deploy-to-vm.yml
     with:
       port: 8000
