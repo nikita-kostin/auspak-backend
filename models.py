@@ -5,8 +5,8 @@ from supabase import create_client, Client
 from typing import Optional
 
 
-supabase_url = os.environ.get("SUPABASE_URL", "https://sgjnblasgncialxadixf.supabase.co")
-supabase_key = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnam5ibGFzZ25jaWFseGFkaXhmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcwMzA5MzQyMCwiZXhwIjoyMDE4NjY5NDIwfQ.hAtZKiIo1GWefvk7dRS0X1UiB8_6KJ7trpuQ7zEssxc")
+supabase_url = os.environ.get("SUPABASE_URL", None)
+supabase_key = os.environ.get("SUPABASE_KEY", None)
 supabase: Client = create_client(supabase_url, supabase_key)
 
 
