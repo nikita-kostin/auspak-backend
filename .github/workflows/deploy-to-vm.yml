@@ -57,10 +57,7 @@ jobs:
       - name: Run the container
         run: |
           ssh -i ~/.ssh/vm "ubuntu@${{ secrets.host }}" << END
-            export SUPABASE_URL=${{ secrets.supabase_url }}
-            export SUPABASE_KEY=${{ secrets.supabase_key }}
-            export AUSPAK_PORT=${{ inputs.port }}
-            cd ~/auspak_$AUSPAK_PORT
+            cd ~/auspak_${{ inputs.port }}
             sudo docker build -t auspak-image --target app .
-            sudo docker run -d --name=auspak_$AUSPAK_PORT -e SUPABASE_URL=$SUPABASE_URL -e SUPABASE_KEY=$SUPABASE_KEY -e AUSPAK_PORT=$AUSPAK_PORT -p $AUSPAK_PORT:$AUSPAK_PORT auspak-image
+            sudo docker run -d --name=auspak_${{ inputs.port }} -e SUPABASE_URL=${{ secrets.supabase_url }} -e SUPABASE_KEY=${{ secrets.supabase_key }} -e AUSPAK_PORT=${{ inputs.port }} -p ${{ inputs.port }}:${{ inputs.port }} auspak-image
           END
