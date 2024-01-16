@@ -43,7 +43,9 @@ jobs:
       - name: Stop the app and clean up
         run: |
           ssh -i ~/.ssh/vm "ubuntu@${{ secrets.host }}" << END
-            screen -XS auspak_${{ inputs.port }} quit
+            docker stop auspak
+            docker rm auspak
+            cd ~
             rm -rf ~/auspak_${{ inputs.port }}
             mkdir ~/auspak_${{ inputs.port }}
           END
@@ -52,21 +54,12 @@ jobs:
         run: |
           scp -i ~/.ssh/vm -r ./* "ubuntu@${{ secrets.host }}:/home/ubuntu/auspak_${{ inputs.port }}"
 
-      - name: Set up dependencies
-        run: |
-          ssh -i ~/.ssh/vm "ubuntu@${{ secrets.host }}" << END
-            python3.9 -m venv ~/auspak_${{ inputs.port }}/venv
-            source ~/auspak_${{ inputs.port }}/venv/bin/activate
-            python3.9 -m pip install --upgrade pip
-            pip install -r ~/auspak_${{ inputs.port }}/requirements.txt
-          END
-
-      - name: Run the app
+      - name: Run the container
         run: |
           ssh -i ~/.ssh/vm "ubuntu@${{ secrets.host }}" << END
             export SUPABASE_URL=${{ secrets.supabase_url }}
             export SUPABASE_KEY=${{ secrets.supabase_key }}
-            screen -s "/bin/bash" -dmS auspak_${{ inputs.port }}
-            screen -S auspak_${{ inputs.port }} -X stuff "source ~/auspak_${{ inputs.port }}/venv/bin/activate\n"
-            screen -S auspak_${{ inputs.port }} -X stuff "python3.9 ~/auspak_${{ inputs.port }}/app.py --port ${{ inputs.port }}\n"
+            cd ~/auspak_${{ inputs.port }}
+            docker build -t auspak-image --target app .
+            docker run -d --name=auspak -e SUPABASE_URL=$SUPABASE_URL -e SUPABASE_KEY=$SUPABASE_KEY -p ${{ inputs.port }}:${{ inputs.port }} auspak-image
           END
