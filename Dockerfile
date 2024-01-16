@@ -4,4 +4,4 @@ FROM base as app
 WORKDIR auspak-backend
 COPY . .
 CMD pip install -r requirements.txt && \
-    python app.py
+    python app.py --port $AUSPAK_PORT

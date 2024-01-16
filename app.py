@@ -3,6 +3,7 @@ import argparse
 import logging
 import uvicorn
 from fastapi import FastAPI
+import algorithm
 
 from routers import auth, chats, points, settings, statistics, stops
 
