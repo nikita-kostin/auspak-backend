@@ -8,6 +8,7 @@ jobs:
   deploy-to-dev:
     uses: ./.github/workflows/deploy-to-vm.yml
     with:
+      environment: development
       port: 8001
     secrets:
       ssh_key: ${{ secrets.ORACLE_SSH_KEY }}
