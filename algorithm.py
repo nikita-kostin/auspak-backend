@@ -46,3 +46,4 @@ def solve_tcp(symmetric_matrix, comeback: bool = False):
     permutation, distance = solve_tsp_dynamic_programming(symmetric_matrix)
     tour = permutation[::2]
     return tour, distance
+

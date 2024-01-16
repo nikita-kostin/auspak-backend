@@ -9,6 +9,7 @@ from enum import Enum
 from supabase import create_client, Client
 from typing import Dict, Optional
 from fastapi.responses import HTMLResponse
+import algorithm
 
 # Create the FastAPI app
 app = FastAPI()
@@ -450,13 +451,16 @@ def get_points_in_range(current_user: User = Depends(get_current_user), min_lat:
     return {"points": response.data}
 
 
-
-# @app.get("/optimal_route/{bus_id}")
-# def get_route(current_user: User = Depends(get_current_user), bus_id: int = 0, ):
-
-    # response = supabase.rpc('get_route', {"bus_id": bus_id}).execute()
-    # return {"route": response.data}
-
+@app.get("/algorithm/tsp")
+def tsp_algorithm(current_user: User = Depends(get_current_user), bus_id: int = 0):
+    response = supabase.table("bus_stop_mapping").select("*").eq("bus_id", bus_id).execute()
+    df = algorithm.prepare_data()
+    coordinates = algorithm.get_coordinates(df)
+    durations = algorithm.get_time_matrix(coordinates)
+    sym_matrix = algorithm.symmetricize(durations)
+    points, distance = algorithm.solve_tcp(sym_matrix)
+    points 
+    return {"points": points}
 
 
 if __name__ == "__main__":
