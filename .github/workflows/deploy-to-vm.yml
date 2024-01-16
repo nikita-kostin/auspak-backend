@@ -45,6 +45,8 @@ jobs:
           ssh -i ~/.ssh/vm "ubuntu@${{ secrets.host }}" << END
             sudo docker stop auspak
             sudo docker rm auspak
+            sudo docker stop auspak_${{ inputs.port }}
+            sudo docker rm auspak_${{ inputs.port }}
             cd ~
             rm -rf ~/auspak_${{ inputs.port }}
             mkdir ~/auspak_${{ inputs.port }}
@@ -61,5 +63,5 @@ jobs:
             export SUPABASE_KEY=${{ secrets.supabase_key }}
             cd ~/auspak_${{ inputs.port }}
             sudo docker build -t auspak-image --target app .
-            sudo docker run -d --name=auspak -e SUPABASE_URL=$SUPABASE_URL -e SUPABASE_KEY=$SUPABASE_KEY -p ${{ inputs.port }}:${{ inputs.port }} auspak-image
+            sudo docker run -d --name=auspak_${{ inputs.port }} -e SUPABASE_URL=$SUPABASE_URL -e SUPABASE_KEY=$SUPABASE_KEY -p ${{ inputs.port }}:${{ inputs.port }} auspak-image
           END
