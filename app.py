@@ -3,14 +3,14 @@ import argparse
 import logging
 import uvicorn
 from fastapi import FastAPI
-import algorithm
 
-from routers import auth, chats, points, settings, statistics, stops
+from routers import auth, chats, points, settings, statistics, stops, algorithm
 
 
 # Create the FastAPI app
 app = FastAPI()
 
+app.include_router(algorithm.router)
 app.include_router(auth.router)
 app.include_router(chats.router)
 #app.include_router(points.router)

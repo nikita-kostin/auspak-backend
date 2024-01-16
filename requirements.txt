@@ -40,6 +40,7 @@ pywin32-ctypes==0.2.2
 realtime==1.0.2
 requests==2.31.0
 routingpy==1.3.0
+shapely==2.0.2
 six==1.16.0
 sniffio==1.3.0
 starlette==0.35.1

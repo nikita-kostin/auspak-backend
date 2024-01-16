@@ -3,12 +3,10 @@ from fastapi import status, APIRouter, HTTPException, Depends
 from dependencies import get_current_user
 from models import supabase, Stop, User, UserEntity
 
-
-
-
 router = APIRouter(prefix="/stops", tags=["stops"])
 
 #TODO please check the logic here
+#TODO while creating a stop as an operator, I get a bad request error but stop is still created
 # Define the endpoint for creating a stop
 @router.post("/stop")
 def create_stop(long: str, lat: str, current_user: User = Depends(get_current_user)):
