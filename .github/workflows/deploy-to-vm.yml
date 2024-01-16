@@ -43,8 +43,8 @@ jobs:
       - name: Stop the app and clean up
         run: |
           ssh -i ~/.ssh/vm "ubuntu@${{ secrets.host }}" << END
-            docker stop auspak
-            docker rm auspak
+            sudo docker stop auspak
+            sudo docker rm auspak
             cd ~
             rm -rf ~/auspak_${{ inputs.port }}
             mkdir ~/auspak_${{ inputs.port }}
@@ -60,6 +60,6 @@ jobs:
             export SUPABASE_URL=${{ secrets.supabase_url }}
             export SUPABASE_KEY=${{ secrets.supabase_key }}
             cd ~/auspak_${{ inputs.port }}
-            docker build -t auspak-image --target app .
-            docker run -d --name=auspak -e SUPABASE_URL=$SUPABASE_URL -e SUPABASE_KEY=$SUPABASE_KEY -p ${{ inputs.port }}:${{ inputs.port }} auspak-image
+            sudo docker build -t auspak-image --target app .
+            sudo docker run -d --name=auspak -e SUPABASE_URL=$SUPABASE_URL -e SUPABASE_KEY=$SUPABASE_KEY -p ${{ inputs.port }}:${{ inputs.port }} auspak-image
           END
