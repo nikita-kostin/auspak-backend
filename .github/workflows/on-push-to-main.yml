@@ -8,6 +8,7 @@ jobs:
   deploy-to-prod:
     uses: ./.github/workflows/deploy-to-vm.yml
     with:
+      environment: production
       port: 8000
     secrets:
       ssh_key: ${{ secrets.ORACLE_SSH_KEY }}

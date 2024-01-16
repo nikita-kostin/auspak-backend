@@ -5,7 +5,10 @@ on:
     inputs:
       environment:
         required: true
-        type: environment
+        type: choice
+        options:
+        - development
+        - production
       port:
         required: true
         type: string
