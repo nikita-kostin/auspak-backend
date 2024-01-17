@@ -39,7 +39,7 @@ def tsp_algorithm(bus_id: int = 0):
     #print(durations)
     sym_matrix = symmetricize(durations)
     #print(sym_matrix)
-    points, distance = solve_tcp(sym_matrix)
+    points = solve_tcp(sym_matrix)
     sorted_stops = [all_stops[i] for i in points]
     #print(sorted_stops)
     return {"data": sorted_stops}
@@ -80,4 +80,4 @@ def solve_tcp(symmetric_matrix, comeback: bool = False):
         symmetric_matrix[:, 0] = 0 #doesn't come back to the start
     permutation, distance = solve_tsp_dynamic_programming(symmetric_matrix)
     tour = permutation[::2]
-    return tour, distance
+    return tour
