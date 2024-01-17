@@ -13,8 +13,11 @@ router = APIRouter(prefix="/algorithm", tags=["Algorithm"])
 
 graphhopper_api_key = os.environ.get("GRAPHOPPER_API_KEY", None)
 
+client_graphhopper = rp.Graphhopper(api_key=graphhopper_api_key)
+
+
 #TODO does not depend on a user
-@router.get("/")
+@router.get("/tsp")
 def tsp_algorithm(bus_id: int = 0):
     #Prepare data
     response = supabase.table("bus_stop_mappings").select("*").eq("bus_id", bus_id).execute()
@@ -53,8 +56,7 @@ def tsp_algorithm(bus_id: int = 0):
 #     return coordinates
 
 def get_time_matrix(coordinates):
-    api = rp.Graphhopper(api_key=graphhopper_api_key)
-    matrix = api.matrix(locations=coordinates, profile='car') #TODO check if bus is available
+    matrix = client_graphhopper.matrix(locations=coordinates, profile='car') #TODO check if bus is available
     durations = np.matrix(matrix.durations)
     return durations
 
