@@ -15,3 +15,4 @@ jobs:
       host: ${{ secrets.ORACLE_HOST }}
       supabase_url: ${{ secrets.SUPABASE_URL }}
       supabase_key: ${{ secrets.SUPABASE_KEY }}
+      graphhopper_api_key: ${{ secrets.GRAPHOPPER_API_KEY }}
