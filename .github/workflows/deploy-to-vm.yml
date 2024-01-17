@@ -18,6 +18,8 @@ on:
         required: true
       supabase_key:
         required: true
+      graphhopper_api_key:
+        required: true
 
 permissions:
   contents: read
