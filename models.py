@@ -54,8 +54,8 @@ class Stop(BaseModel):
     id: Optional[int] = None
     bus_id: Optional[int] = None
     entity : StopEntity
-    lat : Optional[float] = None
-    long : Optional[float] = None
+    lat : float
+    long : float
     location: Optional[str] = None
     name : Optional[str] = None
 
