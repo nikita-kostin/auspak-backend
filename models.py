@@ -12,7 +12,6 @@ supabase: Client = create_client(supabase_url, supabase_key)
 
 # Define the user entities as an Enum
 class UserEntity(Enum):
-    admin = "admin"
     driver = "driver"
     passenger = "passenger"
     parcel_operator = "parcel_operator"

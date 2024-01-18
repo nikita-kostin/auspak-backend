@@ -6,7 +6,7 @@ from models import supabase, Stop, User, UserEntity, StopEntity
 router = APIRouter(prefix="/stops", tags=["stops"])
 
 # Define the endpoint for creating a stop
-@router.post("/stop")
+@router.post("/")
 def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
     # Check if the current user is a driver
     if current_user.entity == UserEntity.driver:
@@ -16,11 +16,6 @@ def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
         )
     else:
         if stop.entity == StopEntity.static:
-            if current_user.entity != UserEntity.admin:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Only admins can create static stops",
-                )
             if stop.bus_id is None:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -35,14 +30,8 @@ def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
                 nearest_stop_distance = nearest_stop["dist_meters"]
                 if nearest_stop_distance > 1000:
                     break
-                nearest_stop_id = nearest_stop["id"]
-                response = supabase.table("bus_stop_mappings").select("bus_id").eq("stop_id", nearest_stop_id).execute()
-                # Check if response has data
-                if response.data:
-                    # Take the bus line that comes first in the table
-                    # TODO: (optional) add more complex logic here
-                    nearest_bus_id = response.data[0]["bus_id"]
-                else:
+                nearest_bus_id = get_nearest_bus_id(nearest_stop)
+                if nearest_bus_id is None:
                     # No buses: try next closest stop
                     continue
                 # TODO: increase afterwards
@@ -75,6 +64,18 @@ def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Stop creation failed",
             )
+    
+
+def get_nearest_bus_id(nearest_stop):
+    nearest_stop_id = nearest_stop["id"]
+    response = supabase.table("bus_stop_mappings").select("bus_id").eq("stop_id", nearest_stop_id).execute()
+    # Check if response has data
+    if response.data:
+        # Take the bus line that comes first in the table
+        # TODO: (optional) add more complex logic here
+        return response.data[0]["bus_id"]
+    else:
+        return None
 
 # Define the endpoint for listing all stops
 @router.get("/stops")
@@ -91,12 +92,12 @@ def list_stops(current_user: User = Depends(get_current_user)):
 
 #TODO doesn't need to be an endpoint, only used inside create_stop
 @router.get("/stops_sorted")
-def get_stops_sorted(lat: float = 0, long: float = 0):
+def get_stops_sorted(current_user: User = Depends(get_current_user), lat: float = 0, long: float = 0):
     response = supabase.rpc('nearby_stops', {"lat_position": lat, "long_position": long}).execute()
     return {"stops": response.data}
 
 
 @router.get("/stops_in_range")
-def get_stops_in_range(min_lat: float = 0, min_long: float = 0, max_lat: float = 0, max_long: float = 0):
+def get_stops_in_range(current_user: User = Depends(get_current_user), min_lat: float = 0, min_long: float = 0, max_lat: float = 0, max_long: float = 0):
     response = supabase.rpc('stops_in_range', {"min_lat": min_lat, "min_long": min_long, "max_lat": max_lat, "max_long": max_long}).execute()
     return {"stops": response.data}
