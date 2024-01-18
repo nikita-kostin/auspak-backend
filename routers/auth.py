@@ -13,6 +13,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 # Define the endpoint for user registration
 # TODO: implement proper authentication
+# TODO: (optional) forbid creating admin accounts from here
 @router.post("/register")
 def register(username: str, password: str, entity: UserEntity):
     response = supabase.table("users").select("*").eq("username", username).execute()

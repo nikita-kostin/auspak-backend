@@ -1,16 +1,35 @@
 from fastapi import status, APIRouter, HTTPException, Depends
 
 from dependencies import get_current_user
-from models import supabase, Stop, User, UserEntity
+from models import supabase, Stop, User, UserEntity, StopEntity
 
 router = APIRouter(prefix="/stops", tags=["stops"])
 
 # Define the endpoint for creating a stop
 @router.post("/stop")
 def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
-    # Check if the current user is a passenger or a parcel operator
-    if current_user.entity == UserEntity.passenger or current_user.entity == UserEntity.parcel_operator:
-        if stop.bus_id is None:
+    # Check if the current user is a driver
+    if current_user.entity == UserEntity.driver:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Drivers can't create stops",
+        )
+    else:
+        if stop.entity == StopEntity.static:
+            if current_user.entity != UserEntity.admin:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Only admins can create static stops",
+                )
+            if stop.bus_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Static stop must specify a bus",
+                )
+            # TODO: (optional) if the stop already exists, only insert new bus mapping
+        else:
+            # Reset the bus line if specified and determine it dynamically
+            stop.bus_id = None
             nearest_stops = get_stops_sorted(lat=stop.lat, long=stop.long)["stops"]
             for nearest_stop in nearest_stops:
                 nearest_stop_distance = nearest_stop["dist_meters"]
@@ -53,12 +72,6 @@ def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Stop creation failed",
             )
-    else:
-        # Raise an exception if the current user is not a passenger
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only passengers or parcel operators can create stops",
-        )
 
 # Define the endpoint for listing all stops
 @router.get("/stops")
