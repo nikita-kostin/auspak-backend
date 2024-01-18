@@ -5,7 +5,7 @@ import numpy as np
 import routingpy as rp
 from python_tsp.exact import solve_tsp_dynamic_programming
 import os
-from fastapi import APIRouter, Depends
+from fastapi import status, APIRouter, HTTPException, Depends
 from models import supabase, User
 from shapely import wkb
 
@@ -22,6 +22,11 @@ def tsp_algorithm(bus_id: int = 0):
     #Prepare data
     response = supabase.table("bus_stop_mappings").select("*").eq("bus_id", bus_id).execute()
     bus_stop_data = response.data
+    if not bus_stop_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Specified bus line doesn't exist",
+        )
     bus_stop_ids = [item['stop_id'] for item in bus_stop_data]
     all_stops = []
     for stop_id in bus_stop_ids:
@@ -42,7 +47,7 @@ def tsp_algorithm(bus_id: int = 0):
     points = solve_tcp(sym_matrix)
     sorted_stops = [all_stops[i] for i in points]
     #print(sorted_stops)
-    return {"data": sorted_stops}
+    return {"stops": sorted_stops}
 
 # def prepare_data(points):
 #     df = pd.DataFrame(points)
