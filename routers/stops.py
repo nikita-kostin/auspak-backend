@@ -12,34 +12,28 @@ router = APIRouter(prefix="/stops", tags=["stops"])
 def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
     # Check if the current user is a passenger or a parcel operator
     if current_user.entity == UserEntity.passenger or current_user.entity == UserEntity.parcel_operator:
-        if current_user.entity == UserEntity.passenger:
-            # Check if the passenger already requested a stop
-            # Query the stop table with user id
-            response = supabase.table("stops").select("*").eq("user_id", current_user.id).execute()
-            # Check if response has data
-            if response.data:
-                # Raise an exception if the stop is not possible
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Passengers can only request one stop at a time",
-                )
         if stop.bus_id is None:
             nearest_stops = get_stops_sorted(lat=stop.lat, long=stop.long)["stops"]
             for nearest_stop in nearest_stops:
                 nearest_stop_distance = nearest_stop["dist_meters"]
-                nearest_stop_id = nearest_stop["id"]
-                # TODO: increase afterwards 
-                if nearest_stop_distance < 10:
-                    # return existing stop id
-                    return {"stop_id": nearest_stop["id"]}
-                elif nearest_stop_distance > 1000:
+                if nearest_stop_distance > 1000:
                     break
+                nearest_stop_id = nearest_stop["id"]
                 response = supabase.table("bus_stop_mappings").select("bus_id").eq("stop_id", nearest_stop_id).execute()
                 # Check if response has data
                 if response.data:
                     # Take the bus line that comes first in the table
                     # TODO: can optionally add more complex logic here
-                    stop.bus_id = response.data[0]["bus_id"]
+                    nearest_bus_id = response.data[0]["bus_id"]
+                else:
+                    # No buses: try next closest stop
+                    continue
+                # TODO: increase afterwards
+                if nearest_stop_distance < 10:
+                    # return existing stop id
+                    return {"stop_id": nearest_stop["id"], "name" : nearest_stop["name"], "bus_id" : nearest_bus_id}
+                else:
+                    stop.bus_id = nearest_bus_id
                     break
             if stop.bus_id is None:
                 # Raise an exception if the stop is not possible
@@ -54,7 +48,7 @@ def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
         if response.data:
             # Return the stop id
             # Can also return bus id if needed
-            return {"stop_id": response.data[0]["id"]}
+            return {"stop_id": response.data[0]["id"], "name" : stop.name, "bus_id": stop.bus_id}
         else:
             # Raise an exception if the stop creation failed
             raise HTTPException(
