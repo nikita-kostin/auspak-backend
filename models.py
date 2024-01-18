@@ -17,6 +17,14 @@ class UserEntity(Enum):
     parcel_operator = "parcel_operator"
 
 
+# Define the stop entities as an Enum
+class StopEntity(Enum):
+    static = "static"
+    passenger_pickup = "passenger_pickup"
+    parcel_pickup = "parcel_pickup"
+    parcel_dropoff = "parcel_dropoff"
+
+
 # Define the user model
 class User(BaseModel):
     id: int
@@ -42,11 +50,13 @@ class Message(BaseModel):
 
 # Define the stop model
 class Stop(BaseModel):
-    id: int
-    driver_id: int
-    user_id: int
-    address: str
-    coordinates: str
+    id: Optional[int] = None
+    bus_id: Optional[int] = None
+    entity : StopEntity
+    lat : float
+    long : float
+    location: Optional[str] = None
+    name : Optional[str] = None
 
 
 # Define the settings model
