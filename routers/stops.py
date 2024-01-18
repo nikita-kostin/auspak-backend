@@ -60,15 +60,11 @@ def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
             detail="Only passengers or parcel operators can create stops",
         )
 
-# TODO: redundant endpoint:
-#       user sometimes uses existing stops and doesn't create new ones
-#       => user should see all stops
-#       so can just use get_stops_in_range instead
-# Define the endpoint for listing stops
+# Define the endpoint for listing all stops
 @router.get("/stops")
 def list_stops(current_user: User = Depends(get_current_user)):
     # Query the stop table with the current user id
-    response = supabase.table("stops").select("*").eq("user_id", current_user.id).execute()
+    response = supabase.table("stops").select("*").execute()
     # Check if the response has data
     if response.data:
         # Return the list of stops as Stop objects
