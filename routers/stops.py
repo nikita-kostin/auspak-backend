@@ -5,8 +5,6 @@ from models import supabase, Stop, User, UserEntity
 
 router = APIRouter(prefix="/stops", tags=["stops"])
 
-#TODO please check the logic here
-#TODO while creating a stop as an operator, I get a bad request error but stop is still created
 # Define the endpoint for creating a stop
 @router.post("/stop")
 def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
@@ -86,8 +84,7 @@ def get_stops_sorted(lat: float = 0, long: float = 0):
     return {"stops": response.data}
 
 
-#TODO does not depend on the user
 @router.get("/stops_in_range")
-def get_stops_in_range(current_user: User = Depends(get_current_user), min_lat: float = 0, min_long: float = 0, max_lat: float = 0, max_long: float = 0):
+def get_stops_in_range(min_lat: float = 0, min_long: float = 0, max_lat: float = 0, max_long: float = 0):
     response = supabase.rpc('stops_in_range', {"min_lat": min_lat, "min_long": min_long, "max_lat": max_lat, "max_long": max_long}).execute()
     return {"stops": response.data}
