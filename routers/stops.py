@@ -48,11 +48,7 @@ def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
                 # TODO: increase afterwards
                 if nearest_stop_distance < 10:
                     # Return existing stop info
-                    return {"bus_id": nearest_bus_id,
-                            "entity" : nearest_stop["entity"],
-                            "lat" : nearest_stop["lat"],
-                            "long" : nearest_stop["long"],
-                            "name" : nearest_stop["name"]}
+                    return {"bus_id" : nearest_bus_id, **nearest_stop}
                 else:
                     stop.bus_id = nearest_bus_id
                     break
@@ -71,13 +67,8 @@ def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
                                                 "name" : stop.name}).execute()
         # Check if the response has data
         if response.data:
-            selected_stop = response.data[0]
             # Return the stop info
-            return {"bus_id": stop.bus_id,
-                    "entity" : selected_stop["entity"],
-                    "lat" : selected_stop["lat"],
-                    "long" : selected_stop["long"],
-                    "name" : selected_stop["name"]}
+            return {"bus_id": stop.bus_id, **response.data[0]}
         else:
             # Raise an exception if the stop creation failed
             raise HTTPException(
