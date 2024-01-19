@@ -56,6 +56,22 @@ def tsp_algorithm(bus_id: int = 0):
     return {"data": sorted_stops}
 
 
+# def prepare_data(points):
+#     df = pd.DataFrame(points)
+#     df = df['points'].apply(pd.Series)
+#     df[['id', 'name', 'lat', 'long']] = df\
+#         .apply(
+#             lambda row: pd.Series({'id': row['id'], 'name': row['name'], 'lat': row['lat'], 'long': row['long']}),
+#             axis=1
+#         )
+#     return df
+
+# def get_coordinates(df):
+#     df['long'], df['lat'] = zip(*df['location'].apply(lambda loc: (loc.longitude, loc.latitude)))
+#     coordinates = df[['long', 'lat']].values
+#     return coordinates
+
+
 def get_time_matrix(coordinates):
     # TODO check if bus is available
     matrix = client_graphhopper.matrix(locations=coordinates, profile='car')
