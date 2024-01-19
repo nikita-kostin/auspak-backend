@@ -13,7 +13,6 @@ app = FastAPI()
 app.include_router(algorithm.router)
 app.include_router(auth.router)
 app.include_router(chats.router)
-#app.include_router(settings.router)
 app.include_router(statistics.router)
 app.include_router(stops.router)
 
