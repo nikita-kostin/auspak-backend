@@ -10,7 +10,7 @@ router = APIRouter(prefix="/statistics", tags=["statistics"])
 # Define the endpoint for getting statistics
 @router.get("/")
 def get_statistics(current_user: User = Depends(get_current_user)):
-    if current_user.entity == UserEntity.parcel_operator:
+    if current_user.entity != UserEntity.parcel_operator:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only parcel operators can get statistics",
@@ -18,8 +18,8 @@ def get_statistics(current_user: User = Depends(get_current_user)):
         return {"data": {}}
         #TODO len, but must be count to avoid loading all data
     statistics = {
-        "parcels_delivered": len(supabase.table("stops").select("*").execute().data),
-        "parcels_pending": len(supabase.table("stops").select("*").eq("is_active", True).execute().data),
+        "parcels_delivered": len(supabase.table("stops").select("*").eq("is_active", False).in_("entity", ["parcel_pickup", "parcel_dropoff"]).execute().data),#parcels + passangers
+        "parcels_pending": len(supabase.table("stops").select("*").eq("is_active", True).in_("entity", ["parcel_pickup", "parcel_dropoff"]).execute().data),
         "peak_hours": "11:43",
         "revenue_per_parcel": 9,
         "avg_cost_per_parcel": 8,
@@ -29,3 +29,47 @@ def get_statistics(current_user: User = Depends(get_current_user)):
         "parcels_damage": 0.13
     }    
     return {"data": statistics}
+
+
+@router.get("/events")
+def get_events(current_user: User = Depends(get_current_user)):
+    if current_user.entity != UserEntity.parcel_operator:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only parcel operators can get statistics",
+        )
+        return {"data": {}}
+    
+    #TODO equal to parcel_status
+    events = supabase.table("stops").select("*").eq("is_active", False).in_("entity", ["parcel_pickup", "parcel_dropoff"]).execute().data
+
+    # Filter the events to include only stop_id, lat, long, and updated_at
+    # Get a list of stop_ids from the events
+    stop_ids = [event["stop_id"] for event in events]
+    
+    # Find all corresponding entries in the bus_stop_mappings_table
+    bus_stop_mappings = supabase.table("bus_stop_mappings").select("*").in_("stop_id", stop_ids).execute().data
+    
+    # Create a dictionary to map stop_id to bus_stop_mapping
+    stop_id_to_mapping = {mapping["stop_id"]: mapping for mapping in bus_stop_mappings}
+    
+    # Filter the events to include only stop_id, lat, long, updated_at, and the corresponding bus_stop_mapping
+    filtered_events = [
+        {
+            "stop_id": event["stop_id"],
+            "lat": event["lat"],
+            "long": event["long"],
+            "updated_at": event["updated_at"],
+            "entity": event["entity"],
+            "bus_stop_mapping": stop_id_to_mapping.get(event["stop_id"])['bus_id']
+        }
+        for event in events
+    ]
+
+    
+
+    print(filtered_events)
+
+    return {"data": filtered_events}
+
+    #return {"data": events}
