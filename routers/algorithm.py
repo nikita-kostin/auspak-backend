@@ -3,7 +3,7 @@ import numpy as np
 import routingpy as rp
 from python_tsp.exact import solve_tsp_dynamic_programming
 import os
-from fastapi import APIRouter
+from fastapi import status, APIRouter, HTTPException
 from models import supabase
 from shapely import wkb
 
@@ -24,13 +24,19 @@ def tsp_algorithm(bus_id: int = 0):
         .eq("bus_id", bus_id)\
         .execute()
     bus_stop_data = response.data
+    if not bus_stop_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Specified bus line doesn't exist",
+        )
     bus_stop_ids = [item['stop_id'] for item in bus_stop_data]
     all_stops = []
     for stop_id in bus_stop_ids:
         stop_response = supabase\
             .table("stops")\
             .select("*")\
-            .eq("id", stop_id)\
+            .eq("is_active", True)\
+            .eq("stop_id", stop_id)\
             .execute()
         all_stops.extend(stop_response.data)
     df = pd.DataFrame(
@@ -48,12 +54,16 @@ def tsp_algorithm(bus_id: int = 0):
     try:
         durations = get_time_matrix(df)
     except Exception as e:
-        print(f"An error occurred: {e}")
-        return {"error": str(e)}
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Couldn't calculate route: {e}",
+        )
+    # print(durations)
     sym_matrix = symmetricize(durations)
     points = solve_tcp(sym_matrix)
     sorted_stops = [all_stops[i] for i in points]
-    return {"data": sorted_stops}
+    # print(sorted_stops)
+    return {"stops": sorted_stops}
 
 
 # def prepare_data(points):

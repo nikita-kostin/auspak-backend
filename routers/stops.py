@@ -18,6 +18,11 @@ def create_stop(stop: Stop, current_user: User = Depends(get_current_user)):
         )
     else:
         if stop.entity == StopEntity.static:
+            if current_user.entity != UserEntity.parcel_operator:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Only operators can create static stops",
+                )
             if stop.bus_id is None:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -25,6 +30,21 @@ def create_stop(stop: Stop, current_user: User = Depends(get_current_user)):
                 )
             # TODO: (optional) if the stop already exists, only insert new bus mapping
         else:
+            if current_user.entity == UserEntity.passenger:
+                # Check if the passenger already requested a stop
+                # Query the stop table with user id
+                response = supabase.table("stops")\
+                    .select("*")\
+                    .eq("user_id", current_user.id)\
+                    .eq("is_active", True)\
+                    .execute()
+                # Check if response has data
+                if response.data:
+                    # Raise an exception if the stop is not possible
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Passengers can only request one stop at a time",
+                    )
             # Reset the bus line if specified and determine it dynamically
             stop.bus_id = None
             nearest_stops = get_stops_sorted(lat=stop.lat, long=stop.long)["stops"]
@@ -55,7 +75,8 @@ def create_stop(stop: Stop, current_user: User = Depends(get_current_user)):
                                                 "entity": stop.entity.value,
                                                 "lat": stop.lat,
                                                 "long": stop.long,
-                                                "name": stop.name}).execute()
+                                                "name": stop.name,
+                                                "user_id": current_user.id}).execute()
         # Check if the response has data
         if response.data:
             # Return the stop info
@@ -80,11 +101,11 @@ def get_nearest_bus_id(nearest_stop):
         return None
 
 
-# Define the endpoint for listing all stops
+# Define the endpoint for listing all active stops
 @router.get("/stops")
 def list_stops(current_user: User = Depends(get_current_user)):
     # Query the stop table with the current user id
-    response = supabase.table("stops").select("*").execute()
+    response = supabase.table("stops").select("*").eq("is_active", True).execute()
     # Check if the response has data
     if response.data:
         # Return the list of stops as Stop objects
