@@ -93,7 +93,7 @@ def symmetricize(m, high_int=None):
     # if high_int not provided, make it equal to 10 times the max value:
     # this is a hack to make sure that the matrix solution ignores one part of the matrix
     if high_int is None:
-        high_int = round(10*m.max())
+        high_int = round(10 * m.max())
     m_bar = m.copy()
     np.fill_diagonal(m_bar, 0)
     u = np.matrix(np.ones(m.shape) * high_int)
