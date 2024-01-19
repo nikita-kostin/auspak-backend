@@ -13,7 +13,7 @@ bus_routes = dict()
 # TODO insert new stops into supabase
 
 @router.post("/start")
-def start_bus(current_user: User = Depends(get_current_user), bus_id : int = 0):
+def start_bus(current_user: User = Depends(get_current_user), bus_id: int = 0):
     if current_user.entity != UserEntity.driver:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -47,37 +47,27 @@ def stop_bus(current_user: User = Depends(get_current_user)):
 
 # List users that requested stop of this bus
 @router.get("/users")
-def list_users(current_user: User = Depends(get_current_user)):
+def list_users(current_user: User = Depends(get_current_user), query: str = "", entity: UserEntity = None):
     if current_user.entity != UserEntity.driver:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only drivers can view user list",
         )
-    # Get bus_id associated with the driver_id
-    response = supabase.table("buses") \
-        .select("bus_id") \
-        .eq("is_active", True) \
-        .eq("driver_id", current_user.id) \
-        .execute()
-    # Extract bus_id from the response
-    if not response.data:
-        return {"users" : []}
-    bus_id = response.data[0]["bus_id"]
-    # Get stop_ids associated with the bus_id
-    response = supabase.table("bus_stop_mappings") \
-        .select("stop_id") \
-        .eq("bus_id", bus_id) \
-        .execute()
-    # Extract stop_ids from the inner query result
-    stop_ids = [entry["stop_id"] for entry in response.data]
-    # Use the extracted stop_ids in the outer query
-    response = supabase.table("stops") \
-        .select("user_id") \
-        .neq("entity", "static") \
-        .eq("is_active", True) \
-        .in_("stop_id", stop_ids) \
-        .execute()
-    return {"users" : response.data}
+    if entity == UserEntity.driver:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Can't chat with drivers",
+        )
+    users = supabase.rpc('get_users_for_driver', {"driver_id_": current_user.id}).execute().data
+    if query != "":
+        users = [user for user in users if \
+            user["first_name"].startswith(query) or
+            user["last_name"].startswith(query) or
+            (user["last_name"] + user["last_name"]).startswith(query)]
+        
+    if entity is not None:
+        users = [user for user in users if user["entity"] == entity.value]
+    return {"users": users}
 
 # List bus lines that are not taken by any driver
 @router.get("/lines")
