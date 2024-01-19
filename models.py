@@ -58,11 +58,12 @@ class Message(BaseModel):
 class Stop(BaseModel):
     id: Optional[int] = None
     bus_id: Optional[int] = None
-    entity : StopEntity
-    lat : float
-    long : float
+    entity: StopEntity
+    lat: float
+    long: float
     location: Optional[str] = None
-    name : Optional[str] = None
+    name: Optional[str] = None
+
 
 class Settings(BaseModel):
     first_name: Optional[str] = None
@@ -70,4 +71,3 @@ class Settings(BaseModel):
     address: Optional[str] = None
     phone_number: Optional[str] = None
     email: Optional[str] = None
-    
