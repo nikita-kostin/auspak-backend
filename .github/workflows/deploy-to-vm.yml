@@ -26,7 +26,6 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
 

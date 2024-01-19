@@ -6,13 +6,19 @@ on:
 
 jobs:
   deploy-to-dev:
-    uses: ./.github/workflows/deploy-to-vm.yml
-    with:
-      environment: development
-      port: 8001
-    secrets:
-      ssh_key: ${{ secrets.ORACLE_SSH_KEY }}
-      host: ${{ secrets.ORACLE_HOST }}
-      supabase_url: ${{ secrets.SUPABASE_URL }}
-      supabase_key: ${{ secrets.SUPABASE_KEY }}
-      graphhopper_api_key: ${{ secrets.GRAPHOPPER_API_KEY }}
+    steps:
+      - name: Deploy to dev environment
+        uses: ./.github/workflows/deploy-to-vm.yml
+        with:
+          environment: development
+          port: 8001
+        secrets:
+          ssh_key: ${{ secrets.ORACLE_SSH_KEY }}
+          host: ${{ secrets.ORACLE_HOST }}
+          supabase_url: ${{ secrets.SUPABASE_URL }}
+          supabase_key: ${{ secrets.SUPABASE_KEY }}
+          graphhopper_api_key: ${{ secrets.GRAPHOPPER_API_KEY }}
+
+      - name: Run linter
+        run: |
+          pylint ./ --disable=C0103
