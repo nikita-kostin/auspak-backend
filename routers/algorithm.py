@@ -3,8 +3,8 @@ import numpy as np
 import routingpy as rp
 from python_tsp.exact import solve_tsp_dynamic_programming
 import os
-from fastapi import status, APIRouter, HTTPException, Depends
-from models import supabase, User
+from fastapi import status, APIRouter, HTTPException
+from models import supabase
 from shapely import wkb
 
 router = APIRouter(prefix="/algorithm", tags=["Algorithm"])
@@ -58,11 +58,11 @@ def tsp_algorithm(bus_id: int = 0):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Couldn't calculate route: {e}",
         )
-    #print(durations)
+    # print(durations)
     sym_matrix = symmetricize(durations)
     points = solve_tcp(sym_matrix)
     sorted_stops = [all_stops[i] for i in points]
-    #print(sorted_stops)
+    # print(sorted_stops)
     return {"stops": sorted_stops}
 
 

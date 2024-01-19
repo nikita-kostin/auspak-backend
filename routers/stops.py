@@ -33,7 +33,11 @@ def create_stop(stop: Stop, current_user: User = Depends(get_current_user)):
             if current_user.entity == UserEntity.passenger:
                 # Check if the passenger already requested a stop
                 # Query the stop table with user id
-                response = supabase.table("stops").select("*").eq("user_id", current_user.id).eq("is_active", True).execute()
+                response = supabase.table("stops")\
+                    .select("*")\
+                    .eq("user_id", current_user.id)\
+                    .eq("is_active", True)\
+                    .execute()
                 # Check if response has data
                 if response.data:
                     # Raise an exception if the stop is not possible
@@ -95,6 +99,7 @@ def get_nearest_bus_id(nearest_stop):
         return response.data[0]["bus_id"]
     else:
         return None
+
 
 # Define the endpoint for listing all active stops
 @router.get("/stops")
