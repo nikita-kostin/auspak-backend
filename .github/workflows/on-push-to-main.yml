@@ -7,6 +7,7 @@ on:
 jobs:
   deploy-to-prod:
     uses: ./.github/workflows/deploy-to-vm.yml
+    name: Deploy to prod environment
     with:
       environment: production
       port: 8000
