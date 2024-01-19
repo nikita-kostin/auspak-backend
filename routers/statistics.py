@@ -21,8 +21,8 @@ def get_statistics(current_user: User = Depends(get_current_user)):
         "parcels_delivered": len(supabase.table("stops").select("*").eq("is_active", False).in_("entity", ["parcel_pickup", "parcel_dropoff"]).execute().data),#parcels + passangers
         "parcels_pending": len(supabase.table("stops").select("*").eq("is_active", True).in_("entity", ["parcel_pickup", "parcel_dropoff"]).execute().data),
         "peak_hours": "11:43",
-        "revenue_per_parcel": 9,
-        "avg_cost_per_parcel": 8,
+        "passenger_transported": len(supabase.table("stops").select("*").eq("is_active", False).eq("entity", "passenger_pickup").execute().data),
+        "passenger_transit": len(supabase.table("stops").select("*").eq("is_active", True).eq("entity", "passenger_pickup").execute().data),
         "capacity_utilization": 80.8,
         "emissions": 0.129,
         "customer_retention": 73.4,
