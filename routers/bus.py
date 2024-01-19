@@ -35,7 +35,37 @@ def start_bus(current_user: User = Depends(get_current_user), bus_id : int = 0):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Bus instantiation failed",
         )
-    
+
+# List users that requested stop of this bus
+@router.get("/users")
+def list_users(current_user: User = Depends(get_current_user)):
+    if current_user.entity != UserEntity.driver:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only drivers can view user list",
+        )
+    # Get bus_id associated with the driver_id
+    response = supabase.table("buses") \
+        .select("bus_id") \
+        .eq("driver_id", current_user.id) \
+        .execute()
+    # Extract bus_id from the response
+    if not response.data:
+        return {"users" : []}
+    bus_id = response.data[0]["bus_id"]
+    # Get stop_ids associated with the bus_id
+    response = supabase.table("bus_stop_mappings") \
+        .select("stop_id") \
+        .eq("bus_id", bus_id) \
+        .execute()
+    # Extract stop_ids from the inner query result
+    stop_ids = [entry["stop_id"] for entry in response.data]
+    # Use the extracted stop_ids in the outer query
+    response = supabase.table("stops") \
+        .select("user_id") \
+        .in_("stop_id", stop_ids) \
+        .execute()
+    return {"users" : response.data}
 
 # TODO router get bus lines
 

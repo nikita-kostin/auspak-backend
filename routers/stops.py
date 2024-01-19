@@ -53,7 +53,8 @@ def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
                                                 "entity" : stop.entity.value,
                                                 "lat": stop.lat,
                                                 "long": stop.long,
-                                                "name" : stop.name}).execute()
+                                                "name" : stop.name,
+                                                "user_id" : current_user.id}).execute()
         # Check if the response has data
         if response.data:
             # Return the stop info
