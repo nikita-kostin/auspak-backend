@@ -31,6 +31,12 @@ class User(BaseModel):
     username: str
     password: str
     entity: UserEntity
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    address: Optional[str] = None
+    phone_number: Optional[str] = None
+    email: Optional[str] = None
+    phone_number: Optional[str] = None
     token: str
 
 
@@ -58,11 +64,10 @@ class Stop(BaseModel):
     location: Optional[str] = None
     name : Optional[str] = None
 
-
-# Define the settings model
 class Settings(BaseModel):
-    id: int
-    user_id: int
-    email: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    address: Optional[str] = None
     phone_number: Optional[str] = None
-    birthdate: Optional[str] = None
+    email: Optional[str] = None
+    

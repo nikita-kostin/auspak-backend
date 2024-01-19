@@ -1,8 +1,9 @@
 from fastapi import status, APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
+from typing import Optional
 
 from dependencies import get_current_user
-from models import supabase, User, UserEntity
+from models import supabase, User, UserEntity, Settings
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -15,25 +16,23 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 # TODO: implement proper authentication
 # TODO: (optional) forbid creating admin accounts from here
 @router.post("/register")
-def register(username: str, password: str, entity: UserEntity, first_name: str, last_name: str, email: str, address: str, phone_number: str):
+def register(user: User):
+    username = user.username
     response = supabase.table("users").select("*").eq("username", username).execute()
     if response.data:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="User with this username already exists"
         )
+
     # Hash the user password
-    hashed_password = password  # You should use a proper hashing function here
-    # Insert the user data into the user table
+    hashed_password = user.password  # You should use a proper hashing function here
+    #get all fields from settings
+    user_dict = user.dict(exclude={"entity"})
+    # Insert the user data into the user table    
     response = supabase.table("users").insert([{
-        "username": username,
-        "password": hashed_password,
-        "entity": entity.value,
-        "first_name": first_name,
-        "last_name": last_name,
-        "email": email,
-        "address": address,
-        "phone_number": phone_number
+        "entity": user.entity.value,
+        **user_dict
     }]).execute()
     # Check if the response has data
     if response.data:
@@ -71,6 +70,16 @@ def login(username: str, password: str):
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+# # Define the endpoint for updating settings
+@router.put("/settings")
+def update_settings(settings: Settings, current_user: User = Depends(get_current_user)):
+        #supabase.table("settings").update(settings.model_dump()).eq("id", response.data[0]["id"]).execute()
+        settings_dict = settings.dict(exclude_unset=True)
+        supabase.table("users").update(settings_dict).eq("id", current_user.id).execute()
+        # Return the updated settings
+        return settings
 
 
 @router.get("/me")
