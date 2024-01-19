@@ -69,6 +69,21 @@ def list_users(current_user: User = Depends(get_current_user)):
         .execute()
     return {"users" : response.data}
 
-# TODO router get bus lines
-
-    
+# List bus lines that are not taken by any driver
+@router.get("/lines")
+def list_bus_lines(current_user: User = Depends(get_current_user)):
+    if current_user.entity != UserEntity.driver:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only drivers can view bus lines list",
+        )
+    # Fetch all bus_ids from bus_stop_mappings
+    response = supabase.from_("bus_stop_mappings").select("bus_id").execute()
+    bus_ids_in_mappings = [item["bus_id"] for item in response.data]
+    # Fetch all bus_ids from buses
+    response = supabase.from_("buses").select("bus_id").execute()
+    bus_ids_in_buses = [item["bus_id"] for item in response.data]
+    # Find bus_ids that are in mappings but not in buses
+    bus_ids_not_in_buses = [bus_id for bus_id in bus_ids_in_mappings if bus_id not in bus_ids_in_buses]
+    bus_ids_in_buses.sort
+    return {"buses" : set(bus_ids_not_in_buses)}
