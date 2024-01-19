@@ -7,6 +7,7 @@ on:
 jobs:
   deploy-to-dev:
     uses: ./.github/workflows/deploy-to-vm.yml
+    name: Deploy to dev environment
     with:
       environment: development
       port: 8001
