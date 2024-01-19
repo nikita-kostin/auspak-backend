@@ -66,7 +66,7 @@ def create_stop(stop: Stop, current_user: User = Depends(get_current_user)):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Stop creation failed",
             )
-    
+
 
 def get_nearest_bus_id(nearest_stop):
     nearest_stop_id = nearest_stop["id"]
@@ -102,6 +102,17 @@ def get_stops_sorted(_: User = Depends(get_current_user), lat: float = 0, long: 
 
 
 @router.get("/stops_in_range")
-def get_stops_in_range(_: User = Depends(get_current_user), min_lat: float = 0, min_long: float = 0, max_lat: float = 0, max_long: float = 0):
-    response = supabase.rpc('stops_in_range', {"min_lat": min_lat, "min_long": min_long, "max_lat": max_lat, "max_long": max_long}).execute()
+def get_stops_in_range(
+        _: User = Depends(get_current_user),
+        min_lat: float = 0,
+        min_long: float = 0,
+        max_lat: float = 0,
+        max_long: float = 0
+):
+    response = supabase\
+        .rpc(
+            'stops_in_range',
+            {"min_lat": min_lat, "min_long": min_long, "max_lat": max_lat, "max_long": max_long}
+        )\
+        .execute()
     return {"stops": response.data}
