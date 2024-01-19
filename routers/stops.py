@@ -1,5 +1,5 @@
 from fastapi import status, APIRouter, HTTPException, Depends
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 from dependencies import get_current_user
 from models import supabase, Stop, User, UserEntity, StopEntity
