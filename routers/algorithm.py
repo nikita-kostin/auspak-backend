@@ -39,8 +39,10 @@ def tsp_algorithm(bus_id: int = 0):
     try:
         durations = get_time_matrix(df)
     except Exception as e:
-        print(f"An error occurred: {e}")
-        return {"error": str(e)}
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Couldn't calculate route: {e}",
+        )
     #print(durations)
     sym_matrix = symmetricize(durations)
     #print(sym_matrix)

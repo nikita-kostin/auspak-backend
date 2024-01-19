@@ -10,7 +10,7 @@ router = APIRouter(prefix="/bus", tags=["bus"])
 # TODO reverse list after full path completed
 bus_routes = dict()
 
-# TODO insert new stops into supabase
+# TODO bus position update
 
 @router.post("/start")
 def start_bus(current_user: User = Depends(get_current_user), bus_id: int = 0):
@@ -19,8 +19,12 @@ def start_bus(current_user: User = Depends(get_current_user), bus_id: int = 0):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only drivers can start the bus",
         )
-    # TODO check if driver is in another bus
-    # TODO check if another driver is in the bus
+    response = supabase.rpc('check_availability', {"p_driver_id": current_user.id, "p_bus_id": bus_id}).execute()
+    if response.data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Bus or driver are already busy",
+        )
     if bus_id not in bus_routes:
         bus_routes[bus_id] = tsp_algorithm(bus_id=bus_id)["stops"]
     response = supabase.table("buses").insert([{
