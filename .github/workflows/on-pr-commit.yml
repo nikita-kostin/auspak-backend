@@ -18,5 +18,9 @@ jobs:
       graphhopper_api_key: ${{ secrets.GRAPHOPPER_API_KEY }}
   run-linter:
     - name: Run linter
-      run: |
-        pylint ./ --disable=C0103
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Run Pylint
+          run: |
+            pylint ./ --disable=C0103
