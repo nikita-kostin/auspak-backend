@@ -1,6 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-
-
 from dependencies import get_current_user
 from models import User, supabase, UserEntity
 
@@ -15,7 +13,6 @@ def get_statistics(current_user: User = Depends(get_current_user)):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only parcel operators can get statistics",
         )
-        return {"data": {}}
         #TODO len, but must be count to avoid loading all data
     statistics = {
         "parcels_delivered": len(supabase.table("stops").select("*").eq("is_active", False).in_("entity", ["parcel_pickup", "parcel_dropoff"]).execute().data),#parcels + passangers
@@ -37,9 +34,7 @@ def get_events(current_user: User = Depends(get_current_user)):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only parcel operators can get statistics",
-        )
-        return {"data": {}}
-    
+        )    
     #TODO equal to parcel_status
     events = supabase.table("stops").select("*").eq("is_active", False).in_("entity", ["parcel_pickup", "parcel_dropoff"]).execute().data
 
@@ -66,10 +61,5 @@ def get_events(current_user: User = Depends(get_current_user)):
         for event in events
     ]
 
-    
-
-    #print(filtered_events)
-
     return {"data": filtered_events}
 
-    #return {"data": events}
