@@ -15,7 +15,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 # TODO: implement proper authentication
 # TODO: (optional) forbid creating admin accounts from here
 @router.post("/register")
-def register(username: str, password: str, entity: UserEntity):
+def register(username: str, password: str, entity: UserEntity, first_name: str, last_name: str, email: str, address: str, phone_number: str):
     response = supabase.table("users").select("*").eq("username", username).execute()
     if response.data:
         raise HTTPException(
@@ -28,7 +28,12 @@ def register(username: str, password: str, entity: UserEntity):
     response = supabase.table("users").insert([{
         "username": username,
         "password": hashed_password,
-        "entity": entity.value
+        "entity": entity.value,
+        "first_name": first_name,
+        "last_name": last_name,
+        "email": email,
+        "address": address,
+        "phone_number": phone_number
     }]).execute()
     # Check if the response has data
     if response.data:
