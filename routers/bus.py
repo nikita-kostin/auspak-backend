@@ -36,6 +36,15 @@ def start_bus(current_user: User = Depends(get_current_user), bus_id : int = 0):
             detail="Bus instantiation failed",
         )
 
+
+@router.post("/stop")
+def stop_bus(current_user: User = Depends(get_current_user)):
+    # Set is_active to False
+    # Implicit check whether user is a driver and has active buses
+    response = supabase.table("buses").update({"is_active": False}).eq("driver_id", current_user.id).execute()
+    return {response}
+
+
 # List users that requested stop of this bus
 @router.get("/users")
 def list_users(current_user: User = Depends(get_current_user)):
@@ -47,6 +56,7 @@ def list_users(current_user: User = Depends(get_current_user)):
     # Get bus_id associated with the driver_id
     response = supabase.table("buses") \
         .select("bus_id") \
+        .eq("is_active", True) \
         .eq("driver_id", current_user.id) \
         .execute()
     # Extract bus_id from the response
