@@ -63,6 +63,8 @@ def list_users(current_user: User = Depends(get_current_user)):
     # Use the extracted stop_ids in the outer query
     response = supabase.table("stops") \
         .select("user_id") \
+        .neq("entity", "static") \
+        .eq("is_active", True) \
         .in_("stop_id", stop_ids) \
         .execute()
     return {"users" : response.data}
