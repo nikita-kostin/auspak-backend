@@ -35,8 +35,8 @@ def tsp_algorithm(bus_id: int = 0):
         stop_response = supabase\
             .table("stops")\
             .select("*")\
-            .eq("is_active", True) \
-            .eq("id", stop_id)\
+            .eq("is_active", True)\
+            .eq("stop_id", stop_id)\
             .execute()
         all_stops.extend(stop_response.data)
     df = pd.DataFrame(

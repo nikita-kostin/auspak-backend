@@ -62,9 +62,9 @@ def list_users(current_user: User = Depends(get_current_user), query: str = "", 
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Can't chat with drivers",
         )
-    users = supabase.rpc('get_users_for_driver', {"driver_id_": current_user.id}).execute().data
+    users = supabase.rpc('get_users_for_driver', {"p_driver_id": current_user.id}).execute().data
     if query != "":
-        users = [user for user in users if \
+        users = [user for user in users if\
             user["first_name"].startswith(query) or
             user["last_name"].startswith(query) or
             (user["last_name"] + user["last_name"]).startswith(query)]
