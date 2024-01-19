@@ -8,9 +8,8 @@ router = APIRouter(prefix="/bus", tags=["bus"])
 
 # Cached bus routes
 # TODO reverse list after full path completed
+# TODO reconstruct route on new stop creation
 bus_routes = dict()
-
-# TODO bus position update
 
 
 @router.post("/start")
@@ -34,7 +33,7 @@ def start_bus(current_user: User = Depends(get_current_user), bus_id: int = 0):
         "stop_number": 0    # bus_routes[bus_id][0]["id"]
     }]).execute()
     if response.data:
-        return {"stops": [stop["name"] for stop in bus_routes[bus_id]]}
+        return get_next_stops(bus_id)
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -49,6 +48,54 @@ def stop_bus(current_user: User = Depends(get_current_user)):
     response = supabase.table("buses").update({"is_active": False}).eq("driver_id", current_user.id).execute()
     return {response}
 
+
+@router.post("/next")
+def move_to_next_stop(current_user: User = Depends(get_current_user)):
+    # Implicit check whether user is a driver and has active buses
+    response = supabase.table("buses")\
+        .select("*")\
+        .eq("driver_id", current_user.id)\
+        .eq("is_active", True).execute().data
+    if not response:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No buses associated with the user",
+        )
+    row_id = response["id"]
+    bus_id = response["bus_id"]
+    direction = response["direction"]
+    current_stop = response["stop_number"]
+    if bus_id not in bus_routes:
+        # returns route for True order
+        bus_routes[bus_id] = tsp_algorithm(bus_id=bus_id)["stops"]
+        if direction:
+            bus_routes[bus_id].reverse()
+    current_stop = (current_stop + 1) % len(bus_routes[bus_id])
+    update_dict = {"stop_number" : current_stop}
+    if current_stop == 0:
+        bus_routes[bus_id].reverse()
+        update_dict["direction"] = True
+    response = supabase.table("buses").update(update_dict).eq("id", row_id).execute()
+    return get_next_stops(bus_id, current_stop_index=current_stop)
+
+
+def get_next_stops(bus_id: int, current_stop_i: int = 0, num_next_stops: int = 3):
+    bus_route = bus_routes[bus_id]
+    indices = list(range(len(bus_route)))
+    result = {"current_stop": bus_route[current_stop_i], "next_stops": list()}
+    current_stop_i = (current_stop_i + 1) % len(indices)
+    if current_stop_i == 0:
+        indices.reverse()
+        current_stop_i = (current_stop_i + 1) % len(indices)
+    while num_next_stops > 0:
+        result["next_stops"].append(bus_route[indices[current_stop_i]])
+        current_stop_i = (current_stop_i + 1) % len(indices)
+        if current_stop_i == 0:
+            indices.reverse()
+            current_stop_i = (current_stop_i + 1) % len(indices)
+        num_next_stops -= 1
+    return result
+    
 
 # List users that requested stop of this bus
 @router.get("/users")
@@ -86,10 +133,10 @@ def list_bus_lines(current_user: User = Depends(get_current_user)):
             detail="Only drivers can view bus lines list",
         )
     # Fetch all bus_ids from bus_stop_mappings
-    response = supabase.from_("bus_stop_mappings").select("bus_id").execute()
+    response = supabase.table("bus_stop_mappings").select("bus_id").execute()
     bus_ids_in_mappings = [item["bus_id"] for item in response.data]
     # Fetch all bus_ids from buses
-    response = supabase.from_("buses").select("bus_id").execute()
+    response = supabase.table("buses").select("bus_id").execute()
     bus_ids_in_buses = [item["bus_id"] for item in response.data]
     # Find bus_ids that are in mappings but not in buses
     bus_ids_not_in_buses = [bus_id for bus_id in bus_ids_in_mappings if bus_id not in bus_ids_in_buses]
