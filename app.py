@@ -4,7 +4,7 @@ import logging
 import uvicorn
 from fastapi import FastAPI
 
-from routers import auth, chats, settings, statistics, stops, algorithm
+from routers import auth, chats, statistics, stops, algorithm
 
 
 # Create the FastAPI app
