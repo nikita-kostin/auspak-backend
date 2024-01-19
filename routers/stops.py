@@ -3,11 +3,13 @@ from fastapi import status, APIRouter, HTTPException, Depends
 from dependencies import get_current_user
 from models import supabase, Stop, User, UserEntity, StopEntity
 
+
 router = APIRouter(prefix="/stops", tags=["stops"])
+
 
 # Define the endpoint for creating a stop
 @router.post("/")
-def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
+def create_stop(stop: Stop, current_user: User = Depends(get_current_user)):
     # Check if the current user is a driver
     if current_user.entity == UserEntity.driver:
         raise HTTPException(
@@ -37,7 +39,7 @@ def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
                 # TODO: increase afterwards
                 if nearest_stop_distance < 10:
                     # Return existing stop info
-                    return {"bus_id" : nearest_bus_id, **nearest_stop}
+                    return {"bus_id": nearest_bus_id, **nearest_stop}
                 else:
                     stop.bus_id = nearest_bus_id
                     break
@@ -50,10 +52,10 @@ def create_stop(stop : Stop, current_user: User = Depends(get_current_user)):
                 )
         # Insert the stop data into the stop table
         response = supabase.rpc('create_stop', {"bus_id": stop.bus_id,
-                                                "entity" : stop.entity.value,
+                                                "entity": stop.entity.value,
                                                 "lat": stop.lat,
                                                 "long": stop.long,
-                                                "name" : stop.name}).execute()
+                                                "name": stop.name}).execute()
         # Check if the response has data
         if response.data:
             # Return the stop info
@@ -77,6 +79,7 @@ def get_nearest_bus_id(nearest_stop):
     else:
         return None
 
+
 # Define the endpoint for listing all stops
 @router.get("/stops")
 def list_stops(current_user: User = Depends(get_current_user)):
@@ -90,14 +93,15 @@ def list_stops(current_user: User = Depends(get_current_user)):
         # Return an empty list if no stops are found
         return []
 
-#TODO doesn't need to be an endpoint, only used inside create_stop
+
+# TODO doesn't need to be an endpoint, only used inside create_stop
 @router.get("/stops_sorted")
-def get_stops_sorted(current_user: User = Depends(get_current_user), lat: float = 0, long: float = 0):
+def get_stops_sorted(_: User = Depends(get_current_user), lat: float = 0, long: float = 0):
     response = supabase.rpc('nearby_stops', {"lat_position": lat, "long_position": long}).execute()
     return {"stops": response.data}
 
 
 @router.get("/stops_in_range")
-def get_stops_in_range(current_user: User = Depends(get_current_user), min_lat: float = 0, min_long: float = 0, max_lat: float = 0, max_long: float = 0):
+def get_stops_in_range(_: User = Depends(get_current_user), min_lat: float = 0, min_long: float = 0, max_lat: float = 0, max_long: float = 0):
     response = supabase.rpc('stops_in_range', {"min_lat": min_lat, "min_long": min_long, "max_lat": max_lat, "max_long": max_long}).execute()
     return {"stops": response.data}
