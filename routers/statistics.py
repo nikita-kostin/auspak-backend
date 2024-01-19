@@ -68,7 +68,7 @@ def get_events(current_user: User = Depends(get_current_user)):
 
     
 
-    print(filtered_events)
+    #print(filtered_events)
 
     return {"data": filtered_events}
 
