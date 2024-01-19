@@ -24,7 +24,6 @@ def register(user: User):
             status_code=status.HTTP_409_CONFLICT,
             detail="User with this username already exists"
         )
-
     # Hash the user password
     hashed_password = user.password  # You should use a proper hashing function here
     #get all fields from settings
