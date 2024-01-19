@@ -1,6 +1,4 @@
-import os
 from fastapi import status, HTTPException
-from supabase import create_client, Client
 
 from models import supabase, User
 

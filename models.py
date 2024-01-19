@@ -52,11 +52,11 @@ class Message(BaseModel):
 class Stop(BaseModel):
     id: Optional[int] = None
     bus_id: Optional[int] = None
-    entity : StopEntity
-    lat : float
-    long : float
+    entity: StopEntity
+    lat: float
+    long: float
     location: Optional[str] = None
-    name : Optional[str] = None
+    name: Optional[str] = None
 
 
 # Define the settings model
