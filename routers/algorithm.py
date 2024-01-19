@@ -1,12 +1,10 @@
 import pandas as pd
-from supabase import create_client, Client
-import requests
 import numpy as np
 import routingpy as rp
 from python_tsp.exact import solve_tsp_dynamic_programming
 import os
-from fastapi import APIRouter, Depends
-from models import supabase, User
+from fastapi import APIRouter
+from models import supabase
 from shapely import wkb
 
 router = APIRouter(prefix="/algorithm", tags=["Algorithm"])
