@@ -1,4 +1,5 @@
 from fastapi import status, APIRouter, HTTPException, Depends
+from typing import Any, Dict, Iterable
 
 from dependencies import get_current_user
 from models import supabase, Stop, User, UserEntity, StopEntity
@@ -7,86 +8,105 @@ from models import supabase, Stop, User, UserEntity, StopEntity
 router = APIRouter(prefix="/stops", tags=["stops"])
 
 
+PASSENGER_STOP_ENTITIES = [StopEntity.passenger_pickup]
+PARCEL_OPERATOR_STOP_ENTITIES = [StopEntity.static, StopEntity.parcel_pickup, StopEntity.parcel_dropoff]
+
+
+def check_permissions(user: User, stop: Stop) -> None:
+    if stop.entity in PASSENGER_STOP_ENTITIES and user.entity != UserEntity.passenger:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Only passengers can create stops of type ${stop.entity.value}"
+        )
+
+    if stop.entity in PARCEL_OPERATOR_STOP_ENTITIES and user.entity != UserEntity.parcel_operator:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Only parcel operators can create stops of type ${stop.entity.value}"
+        )
+
+
+def verify_request(stop: Stop) -> None:
+    if stop.entity == StopEntity.static and stop.bus_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Static stops must specify a bus"
+        )
+
+
+def get_active_stops(user: User) -> Iterable[Stop]:
+    return supabase.table("stops") \
+        .select("*") \
+        .eq("user_id", user.id) \
+        .eq("is_active", True) \
+        .execute()\
+        .data
+
+
+def supabase_create_stop(user: User, stop: Stop) -> Dict[str, Any]:
+    # Insert the stop data into the stop table
+    response = supabase.rpc('create_stop', {"bus_id": stop.bus_id,
+                                            "entity": stop.entity.value,
+                                            "lat": stop.lat,
+                                            "long": stop.long,
+                                            "name": stop.name,
+                                            "user_id": user.id}).execute()
+
+    if not response.data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Stop creation failed",
+        )
+
+    return {"bus_id": stop.bus_id, **response.data[0]}
+
+
+def handle_dynamic_stop(user: User, stop: Stop) -> Dict[str, Any]:
+    nearest_stops = get_stops_sorted(lat=stop.lat, long=stop.long)["stops"]
+    for nearest_stop in nearest_stops:
+        nearest_stop_distance = nearest_stop["dist_meters"]
+        if nearest_stop_distance > 1000:
+            break
+
+        nearest_bus_id = get_nearest_bus_id(nearest_stop)
+        if nearest_bus_id is None:
+            # No buses: try next closest stop
+            continue
+
+        # Reuse existing stop if found nearby
+        if nearest_stop_distance < 10:
+            return {"bus_id": nearest_bus_id, **nearest_stop}
+
+        stop.bus_id = nearest_bus_id
+        return supabase_create_stop(user, stop)
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Stop creation is not possible: no bus lines nearby",
+    )
+
+
 # Define the endpoint for creating a stop
 @router.post("/")
 def create_stop(stop: Stop, current_user: User = Depends(get_current_user)):
-    # Check if the current user is a driver
-    if current_user.entity == UserEntity.driver:
+    # Check if user is allowed to execute the request
+    check_permissions(current_user, stop)
+    # Check if this request contains all the necessary parameters
+    verify_request(stop)
+
+    # TODO: (optional) if the static stop already exists, only insert new bus mapping
+
+    # Raise an exception if another stop already exists for a passenger
+    if current_user.entity == UserEntity.passenger and get_active_stops(current_user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Drivers can't create stops",
+            detail="Passengers can only request one stop at a time",
         )
-    else:
-        if stop.entity == StopEntity.static:
-            if current_user.entity != UserEntity.parcel_operator:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Only operators can create static stops",
-                )
-            if stop.bus_id is None:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Static stop must specify a bus",
-                )
-            # TODO: (optional) if the stop already exists, only insert new bus mapping
-        else:
-            if current_user.entity == UserEntity.passenger:
-                # Check if the passenger already requested a stop
-                # Query the stop table with user id
-                response = supabase.table("stops")\
-                    .select("*")\
-                    .eq("user_id", current_user.id)\
-                    .eq("is_active", True)\
-                    .execute()
-                # Check if response has data
-                if response.data:
-                    # Raise an exception if the stop is not possible
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Passengers can only request one stop at a time",
-                    )
-            # Reset the bus line if specified and determine it dynamically
-            stop.bus_id = None
-            nearest_stops = get_stops_sorted(lat=stop.lat, long=stop.long)["stops"]
-            for nearest_stop in nearest_stops:
-                nearest_stop_distance = nearest_stop["dist_meters"]
-                if nearest_stop_distance > 1000:
-                    break
-                nearest_bus_id = get_nearest_bus_id(nearest_stop)
-                if nearest_bus_id is None:
-                    # No buses: try next closest stop
-                    continue
-                # TODO: increase afterwards
-                if nearest_stop_distance < 10:
-                    # Return existing stop info
-                    return {"bus_id": nearest_bus_id, **nearest_stop}
-                else:
-                    stop.bus_id = nearest_bus_id
-                    break
-            if stop.bus_id is None:
-                # Raise an exception if the stop is not possible
-                # TODO: (optional) change to another status code, e.g., 2xx
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Stop creation is not possible: no bus lines nearby",
-                )
-        # Insert the stop data into the stop table
-        response = supabase.rpc('create_stop', {"bus_id": stop.bus_id,
-                                                "entity": stop.entity.value,
-                                                "lat": stop.lat,
-                                                "long": stop.long,
-                                                "name": stop.name,
-                                                "user_id": current_user.id}).execute()
-        # Check if the response has data
-        if response.data:
-            # Return the stop info
-            return {"bus_id": stop.bus_id, **response.data[0]}
-        else:
-            # Raise an exception if the stop creation failed
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Stop creation failed",
-            )
+
+    if stop.entity != StopEntity.static:
+        return handle_dynamic_stop(current_user, stop)
+
+    return supabase_create_stop(current_user, stop)
 
 
 def get_nearest_bus_id(nearest_stop):
