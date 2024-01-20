@@ -8,7 +8,6 @@ from routers import auth, chats, statistics, stops, algorithm, bus
 from fastapi.middleware.cors import CORSMiddleware
 
 
-
 # Create the FastAPI app
 app = FastAPI()
 
