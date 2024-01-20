@@ -27,6 +27,7 @@ class StopEntity(Enum):
 
 # Define the user model
 class User(BaseModel):
+    id: Optional[int] = None
     password: str
     entity: UserEntity
     first_name: str
