@@ -12,6 +12,7 @@ bus_routes = dict()
 # Cached results of build_next_stops
 build_next_stops_cache = dict()
 
+
 @router.post("/start")
 def start_bus(current_user: User = Depends(get_current_user), bus_id: int = 0):
     if current_user.entity != UserEntity.driver:
@@ -140,7 +141,7 @@ def build_next_stops(bus_id: int, current_stop_i: int = 0, num_next_stops: int =
     result = {"current_stop": next_stops[0], "next_stops": next_stops[1:]}
     build_next_stops_cache[bus_id] = result
     return result
-    
+
 
 # List users that requested stop of this bus
 @router.get("/users")
