@@ -1,7 +1,7 @@
 from fastapi import status, APIRouter, HTTPException, Depends
 
 from dependencies import get_current_user
-from models import supabase, User, UserEntity
+from models import supabase, User, UserEntity, StopEntity
 from routers.algorithm import tsp_algorithm
 
 router = APIRouter(prefix="/bus", tags=["bus"])
@@ -30,7 +30,7 @@ def start_bus(current_user: User = Depends(get_current_user), bus_id: int = 0):
     response = supabase.table("buses").insert([{
         "bus_id": bus_id,
         "driver_id": current_user.id,
-        "stop_number": 0    # bus_routes[bus_id][0]["id"]
+        "stop_number": 0
     }]).execute()
     if response.data:
         return get_next_stops(bus_id)
@@ -64,19 +64,28 @@ def move_to_next_stop(current_user: User = Depends(get_current_user)):
     row_id = response["id"]
     bus_id = response["bus_id"]
     direction = response["direction"]
-    current_stop = response["stop_number"]
+    current_stop_i = response["stop_number"]
     if bus_id not in bus_routes:
         # returns route for True order
         bus_routes[bus_id] = tsp_algorithm(bus_id=bus_id)["stops"]
-        if direction:
+        if not direction:
             bus_routes[bus_id].reverse()
-    current_stop = (current_stop + 1) % len(bus_routes[bus_id])
-    update_dict = {"stop_number" : current_stop}
-    if current_stop == 0:
-        bus_routes[bus_id].reverse()
-        update_dict["direction"] = True
+    bus_route = bus_routes[bus_id]
+    current_stop = bus_route[current_stop_i]
+    if current_stop["entity"] != StopEntity.static.value:
+        response = supabase.table("stops").update({"is_active": False}).eq("stop_id", current_stop["stop_id"]).execute()
+        del bus_route[current_stop]
+        next_stop_i = current_stop_i
+    else:
+        next_stop_i = current_stop_i + 1
+    update_dict = dict()
+    if next_stop_i == len(bus_route):
+        next_stop_i = next_stop_i % len(bus_route)
+        bus_route.reverse()
+        update_dict["direction"] = not direction
+    update_dict["stop_number"] = next_stop_i
     response = supabase.table("buses").update(update_dict).eq("id", row_id).execute()
-    return get_next_stops(bus_id, current_stop_index=current_stop)
+    return get_next_stops(bus_id, current_stop_i=next_stop_i)
 
 
 def get_next_stops(bus_id: int, current_stop_i: int = 0, num_next_stops: int = 3):
