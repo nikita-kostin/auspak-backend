@@ -1,5 +1,5 @@
 from fastapi import status, APIRouter, HTTPException, Depends
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterable
 
 from dependencies import get_current_user
 from models import supabase, Stop, User, UserEntity, StopEntity
@@ -19,10 +19,10 @@ def check_permissions(user: User, stop: Stop) -> None:
             detail=f"Only passengers can create stops of type ${stop.entity.value}"
         )
 
-    if stop.entity in PARCEL_OPERATOR_STOP_ENTITIES and user.entity != UserEntity.driver:
+    if stop.entity in PARCEL_OPERATOR_STOP_ENTITIES and user.entity != UserEntity.parcel_operator:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Only drivers can create stops of type ${stop.entity.value}"
+            detail=f"Only parcel operators can create stops of type ${stop.entity.value}"
         )
 
 
@@ -34,12 +34,13 @@ def verify_request(stop: Stop) -> None:
         )
 
 
-def get_active_stops(user: User) -> List[Stop]:
+def get_active_stops(user: User) -> Iterable[Stop]:
     return supabase.table("stops") \
         .select("*") \
         .eq("user_id", user.id) \
         .eq("is_active", True) \
-        .execute()
+        .execute()\
+        .data
 
 
 def supabase_create_stop(user: User, stop: Stop) -> Dict[str, Any]:
