@@ -24,7 +24,7 @@ def register(user: User):
             detail="User with this email already exists",
         )
     # TODO Hash the user password
-    user_dict = user.dict(exclude={"entity"})
+    user_dict = user.dict(exclude={"entity", "id"})
     # Insert the user data into the user table
     response = (
         supabase.table("users")
@@ -33,7 +33,7 @@ def register(user: User):
     )
     # Check if the response has data
     if response.data:
-        return response.data[0]["id"]
+        return {"id": response.data[0]["id"]}
     else:
         # Raise an exception if the registration failed
         raise HTTPException(
