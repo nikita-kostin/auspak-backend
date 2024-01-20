@@ -1,7 +1,7 @@
 from fastapi import status, APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 
 from dependencies import get_current_user
-from models import supabase, Chat, User, UserEntity
+from models import supabase, Chat, Message, User, UserEntity
 from routers.connection_handler import connection_handler
 
 
@@ -97,6 +97,30 @@ def get_chat_history(chat_id: int, current_user: User = Depends(get_current_user
         )
 
 
+EMPTY_MESSAGE = Message(id=0, chat_id=0, sender_id=0, text="")
+
+
+@router.get("/{chat_id}/last_message")
+def get_last_message(chat_id: int, current_user: User = Depends(get_current_user)):
+    response = supabase.table("chats").select("*").eq("id", chat_id).execute()
+    if response.data:
+        # Get the chat as a Chat object
+        chat = Chat(**response.data[0])
+        if current_user.id in [chat.driver_id, chat.user_id]:
+            response = supabase.table("messages").select("*").eq("chat_id", chat_id).execute()
+            return response.data[0] if response.data else EMPTY_MESSAGE
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User is not authorised to access the chat",
+            )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No chat with given id found",
+        )
+
+
 # Define the websocket endpoint for opening a chat
 @router.websocket("/{chat_id}")
 async def open_chat(websocket: WebSocket, chat_id: int, current_user: User = Depends(get_current_user)):
@@ -115,9 +139,9 @@ async def open_chat(websocket: WebSocket, chat_id: int, current_user: User = Dep
         if current_user.id in [chat.driver_id, chat.user_id]:
             print(f"user {current_user.username} entered the chat")
             connection_handler.register(chat_id, current_user.id, websocket)
-            # existing_messages = supabase.table("messages").select("*").eq("chat_id", chat_id).execute()
-            # for message in existing_messages.data:
-            #     await websocket.send_json(message)
+            existing_messages = supabase.table("messages").select("*").eq("chat_id", chat_id).execute()
+            for message in existing_messages.data:
+                await websocket.send_json(message)
             # Receive messages from the websocket
             while True:
                 # Try to receive a message
