@@ -10,7 +10,7 @@ router = APIRouter(prefix="/stops", tags=["stops"])
 
 
 PASSENGER_STOP_ENTITIES = [StopEntity.passenger_pickup]
-PARCEL_OPERATOR_STOP_ENTITIES = [StopEntity.static, StopEntity.parcel_pickup, StopEntity.parcel_dropoff]
+MANAGER_STOP_ENTITIES = [StopEntity.static, StopEntity.parcel_pickup, StopEntity.parcel_dropoff]
 
 
 def check_permissions(user: User, stop: Stop) -> None:
@@ -20,7 +20,7 @@ def check_permissions(user: User, stop: Stop) -> None:
             detail=f"Only passengers can create stops of type ${stop.entity.value}"
         )
 
-    if stop.entity in PARCEL_OPERATOR_STOP_ENTITIES and user.entity != UserEntity.parcel_operator:
+    if stop.entity in MANAGER_STOP_ENTITIES and user.entity != UserEntity.manager:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Only parcel operators can create stops of type ${stop.entity.value}"

@@ -8,7 +8,7 @@ router = APIRouter(prefix="/statistics", tags=["statistics"])
 # Define the endpoint for getting statistics
 @router.get("/")
 def get_statistics(current_user: User = Depends(get_current_user)):
-    if current_user.entity != UserEntity.parcel_operator:
+    if current_user.entity != UserEntity.manager:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only parcel operators can get statistics",
@@ -58,7 +58,7 @@ def get_statistics(current_user: User = Depends(get_current_user)):
 
 @router.get("/events")
 def get_events(current_user: User = Depends(get_current_user)):
-    if current_user.entity != UserEntity.parcel_operator:
+    if current_user.entity != UserEntity.manager:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only parcel operators can get statistics",
