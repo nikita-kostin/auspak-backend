@@ -14,7 +14,7 @@ supabase: Client = create_client(supabase_url, supabase_key)
 class UserEntity(Enum):
     driver = "driver"
     passenger = "passenger"
-    parcel_operator = "parcel_operator"
+    manager = "manager"
 
 
 # Define the stop entities as an Enum
