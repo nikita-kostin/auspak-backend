@@ -91,6 +91,32 @@ def move_to_next_stop(current_user: User = Depends(get_current_user)):
     return build_next_stops(bus_id, current_stop_i=next_stop_i, cached=False)
 
 
+def update_route(bus_id: int, stop_id: int):
+    response = supabase.table("buses")\
+        .select("*")\
+        .eq("bus_id", bus_id)\
+        .eq("is_active", True)\
+        .execute()
+    if not response.data:
+        # No active buses
+        return
+    bus = response.data[0]
+    row_id = bus["id"]
+    bus_id = bus["bus_id"]
+    direction = bus["direction"]
+    current_stop_i = bus["stop_number"]
+    # Returns route for True order
+    bus_routes[bus_id] = tsp_algorithm(bus_id=bus_id)["stops"]
+    if not direction:
+        bus_routes[bus_id].reverse()
+    find_stop_index =\
+        lambda stops, stop_id:\
+        next((index for index, item in enumerate(stops) if item.get("stop_id") == stop_id), None)
+    if current_stop_i >= find_stop_index(bus_routes[bus_id], stop_id):
+        response = supabase.table("buses").update({"stop_number": current_stop_i + 1}).eq("id", row_id).execute()
+    return
+
+
 @router.get("/list_stops")
 def list_next_stops(current_user: User = Depends(get_current_user), num_next_stops: int = 3):
     """
