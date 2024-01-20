@@ -27,17 +27,11 @@ class StopEntity(Enum):
 
 # Define the user model
 class User(BaseModel):
-    id: int
-    username: str
     password: str
     entity: UserEntity
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    address: Optional[str] = None
-    phone_number: Optional[str] = None
-    email: Optional[str] = None
-    phone_number: Optional[str] = None
-    token: str
+    first_name: str
+    last_name: str
+    email: str
 
 
 # Define the chat model
@@ -56,7 +50,7 @@ class Message(BaseModel):
 
 # Define the stop model
 class Stop(BaseModel):
-    id: Optional[int] = None
+    stop_id: Optional[int] = None
     bus_id: Optional[int] = None
     entity: StopEntity
     lat: float
