@@ -5,6 +5,7 @@ import uvicorn
 from fastapi import FastAPI
 
 from routers import auth, chats, statistics, stops, algorithm, bus
+from fastapi.middleware.cors import CORSMiddleware
 
 
 # Create the FastAPI app
@@ -17,6 +18,14 @@ app.include_router(chats.router)
 app.include_router(statistics.router)
 app.include_router(stops.router)
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
