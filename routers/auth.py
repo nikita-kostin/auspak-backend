@@ -16,12 +16,12 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 # TODO: (optional) forbid creating admin accounts from here
 @router.post("/register")
 def register(user: User):
-    username = user.username
-    response = supabase.table("users").select("*").eq("username", username).execute()
+    email = user.email
+    response = supabase.table("users").select("*").eq("email", email).execute()
     if response.data:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="User with this username already exists",
+            detail="User with this email already exists",
         )
     # TODO Hash the user password
     user_dict = user.dict(exclude={"entity"})
@@ -46,22 +46,22 @@ def register(user: User):
 # TODO: implement proper authentication
 @router.post("/login")
 # def login(form_data: OAuth2PasswordRequestForm = Depends()):
-def login(username: str, password: str):
-    # Get the username and password from the form data
-    # username = form_data.username
+def login(email: str, password: str):
+    # Get the email and password from the form data
+    # email = form_data.email
     # password = form_data.password
-    # Query the user table with the username and password
+    # Query the user table with the email and password
     response = (
         supabase.table("users")
         .select("*")
-        .eq("username", username)
+        .eq("email", email)
         .eq("password", password)
         .execute()
     )
     # Check if the response has data
     if response.data:
         # Generate a token for the user
-        token = username  # You should use a proper token generation function here
+        token = email  # You should use a proper token generation function here
         # Update the user table with the token
         supabase.table("users").update({"token": token}).eq(
             "id", response.data[0]["id"]
@@ -72,7 +72,7 @@ def login(username: str, password: str):
         # Raise an exception if the login failed
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
