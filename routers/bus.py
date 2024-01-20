@@ -6,11 +6,11 @@ from routers.algorithm import tsp_algorithm
 
 router = APIRouter(prefix="/bus", tags=["bus"])
 
-# Cached bus routes
-# TODO reverse list after full path completed
 # TODO reconstruct route on new stop creation
+# Cached bus routes
 bus_routes = dict()
-
+# Cached results of build_next_stops
+build_next_stops_cache = dict()
 
 @router.post("/start")
 def start_bus(current_user: User = Depends(get_current_user), bus_id: int = 0):
@@ -33,7 +33,7 @@ def start_bus(current_user: User = Depends(get_current_user), bus_id: int = 0):
         "stop_number": 0
     }]).execute()
     if response.data:
-        return get_next_stops(bus_id)
+        return build_next_stops(bus_id, cached=False)
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -59,7 +59,7 @@ def move_to_next_stop(current_user: User = Depends(get_current_user)):
     if not response:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No buses associated with the user",
+            detail="No active buses associated with the user",
         )
     row_id = response["id"]
     bus_id = response["bus_id"]
@@ -85,24 +85,60 @@ def move_to_next_stop(current_user: User = Depends(get_current_user)):
         update_dict["direction"] = not direction
     update_dict["stop_number"] = next_stop_i
     response = supabase.table("buses").update(update_dict).eq("id", row_id).execute()
-    return get_next_stops(bus_id, current_stop_i=next_stop_i)
+    return build_next_stops(bus_id, current_stop_i=next_stop_i, cached=False)
 
 
-def get_next_stops(bus_id: int, current_stop_i: int = 0, num_next_stops: int = 3):
-    bus_route = bus_routes[bus_id]
-    indices = list(range(len(bus_route)))
-    result = {"current_stop": bus_route[current_stop_i], "next_stops": list()}
-    current_stop_i = (current_stop_i + 1) % len(indices)
-    if current_stop_i == 0:
-        indices.reverse()
-        current_stop_i = (current_stop_i + 1) % len(indices)
-    while num_next_stops > 0:
-        result["next_stops"].append(bus_route[indices[current_stop_i]])
-        current_stop_i = (current_stop_i + 1) % len(indices)
-        if current_stop_i == 0:
-            indices.reverse()
-            current_stop_i = (current_stop_i + 1) % len(indices)
-        num_next_stops -= 1
+@router.get("/list_stops")
+def list_next_stops(current_user: User = Depends(get_current_user), num_next_stops: int = 3):
+    """
+    Lists current stop and next N stops
+
+    Parameters:
+    - token (str): The user token.
+    - num_next_stops (str): Number of next stops listed.
+
+    Returns:
+    {
+        "current_stop": dict,
+        "next_stops": list[dict]
+    }
+    """
+    # Implicit check whether user is a driver and has active buses
+    response = supabase.table("buses")\
+        .select("*")\
+        .eq("driver_id", current_user.id)\
+        .eq("is_active", True).execute().data
+    if not response:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No active buses associated with the user",
+        )
+    bus_id = response[0]["bus_id"]
+    if bus_id not in bus_routes:
+        # returns route for True order
+        bus_routes[bus_id] = tsp_algorithm(bus_id=bus_id)["stops"]
+        if not response[0]["direction"]:
+            bus_routes[bus_id].reverse()
+    return build_next_stops(bus_id=bus_id, current_stop_i=response[0]["stop_number"], num_next_stops=num_next_stops)
+
+
+def build_next_stops(bus_id: int, current_stop_i: int = 0, num_next_stops: int = 3, cached: bool = True):
+    if cached and (bus_id in build_next_stops_cache):
+        return build_next_stops_cache[bus_id]
+    bus_route = bus_routes[bus_id].copy()
+    next_stops = list()
+    for _ in range(num_next_stops + 1):
+        next_stops.append(bus_route[current_stop_i])
+        if bus_route[current_stop_i]["entity"] != StopEntity.static.value:
+            del bus_route[current_stop_i]
+        else:
+            current_stop_i += 1
+        if current_stop_i == len(bus_route):
+            bus_route.reverse()
+            # bus_route must contain at least one static stop
+            current_stop_i = 1 % len(bus_route)
+    result = {"current_stop": next_stops[0], "next_stops": next_stops[1:]}
+    build_next_stops_cache[bus_id] = result
     return result
     
 
