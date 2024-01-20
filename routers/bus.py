@@ -56,16 +56,18 @@ def move_to_next_stop(current_user: User = Depends(get_current_user)):
     response = supabase.table("buses")\
         .select("*")\
         .eq("driver_id", current_user.id)\
-        .eq("is_active", True).execute().data
-    if not response:
+        .eq("is_active", True)\
+        .execute()
+    if not response.data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No active buses associated with the user",
         )
-    row_id = response["id"]
-    bus_id = response["bus_id"]
-    direction = response["direction"]
-    current_stop_i = response["stop_number"]
+    bus = response.data[0]
+    row_id = bus["id"]
+    bus_id = bus["bus_id"]
+    direction = bus["direction"]
+    current_stop_i = bus["stop_number"]
     if bus_id not in bus_routes:
         # returns route for True order
         bus_routes[bus_id] = tsp_algorithm(bus_id=bus_id)["stops"]
@@ -108,19 +110,21 @@ def list_next_stops(current_user: User = Depends(get_current_user), num_next_sto
     response = supabase.table("buses")\
         .select("*")\
         .eq("driver_id", current_user.id)\
-        .eq("is_active", True).execute().data
-    if not response:
+        .eq("is_active", True)\
+        .execute()
+    if not response.data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No active buses associated with the user",
         )
-    bus_id = response[0]["bus_id"]
+    bus = response.data[0]
+    bus_id = bus["bus_id"]
     if bus_id not in bus_routes:
         # returns route for True order
         bus_routes[bus_id] = tsp_algorithm(bus_id=bus_id)["stops"]
-        if not response[0]["direction"]:
+        if not bus["direction"]:
             bus_routes[bus_id].reverse()
-    return build_next_stops(bus_id=bus_id, current_stop_i=response[0]["stop_number"], num_next_stops=num_next_stops)
+    return build_next_stops(bus_id=bus_id, current_stop_i=bus["stop_number"], num_next_stops=num_next_stops)
 
 
 def build_next_stops(bus_id: int, current_stop_i: int = 0, num_next_stops: int = 3, cached: bool = True):
