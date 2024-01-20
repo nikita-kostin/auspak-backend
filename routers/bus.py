@@ -109,12 +109,16 @@ def update_route(bus_id: int, stop_id: int):
     bus_routes[bus_id] = tsp_algorithm(bus_id=bus_id)["stops"]
     if not direction:
         bus_routes[bus_id].reverse()
-    find_stop_index =\
-        lambda stops, stop_id:\
-        next((index for index, item in enumerate(stops) if item.get("stop_id") == stop_id), None)
-    if current_stop_i >= find_stop_index(bus_routes[bus_id], stop_id):
+    if current_stop_i >= find_stop_index_by_id(bus_routes[bus_id], stop_id):
         response = supabase.table("buses").update({"stop_number": current_stop_i + 1}).eq("id", row_id).execute()
     return
+
+
+def find_stop_index_by_id(stops, stop_id):
+    for index, item in enumerate(stops):
+        if item.get("stop_id") == stop_id:
+            return index
+    return None
 
 
 @router.get("/list_stops")
