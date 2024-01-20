@@ -3,6 +3,7 @@ from typing import Any, Dict, Iterable
 
 from dependencies import get_current_user
 from models import supabase, Stop, User, UserEntity, StopEntity
+from routers.bus import update_route
 
 
 router = APIRouter(prefix="/stops", tags=["stops"])
@@ -57,6 +58,8 @@ def supabase_create_stop(user: User, stop: Stop) -> Dict[str, Any]:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Stop creation failed",
         )
+
+    update_route(stop.bus_id, response.data[0]["stop_id"])
 
     return {"bus_id": stop.bus_id, **response.data[0]}
 
