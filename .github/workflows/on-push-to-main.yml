@@ -12,8 +12,10 @@ jobs:
       environment: production
       port: 8000
     secrets:
-      ssh_key: ${{ secrets.ORACLE_SSH_KEY }}
-      host: ${{ secrets.ORACLE_HOST }}
+      vm_ssh_key: ${{ secrets.VM_SSH_KEY }}
+      vm_host: ${{ secrets.VM_HOST }}
+      vm_user: ${{ secrets.VM_USER }}
+      vm_home_path: ${{ secrets.VM_HOME_PATH }}
       supabase_url: ${{ secrets.SUPABASE_URL }}
       supabase_key: ${{ secrets.SUPABASE_KEY }}
       graphhopper_api_key: ${{ secrets.GRAPHOPPER_API_KEY }}

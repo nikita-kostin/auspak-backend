@@ -10,9 +10,13 @@ on:
         required: true
         type: string
     secrets:
-      ssh_key:
+      vm_ssh_key:
         required: true
-      host:
+      vm_host:
+        required: true
+      vm_user:
+        required: true
+      vm_home_path:
         required: true
       supabase_url:
         required: true
@@ -38,13 +42,13 @@ jobs:
         run: |
           env
           mkdir -p ~/.ssh
-          echo "${{ secrets.ssh_key }}" > ~/.ssh/vm
+          echo "${{ secrets.vm_ssh_key }}" > ~/.ssh/vm
           chmod 600 ~/.ssh/vm
-          ssh-keyscan -p 22 -t ed25519 ${{ secrets.host }} >> ~/.ssh/known_hosts
+          ssh-keyscan -p 22 -t ed25519 ${{ secrets.vm_host }} >> ~/.ssh/known_hosts
 
       - name: Stop the app and clean up
         run: |
-          ssh -i ~/.ssh/vm "ubuntu@${{ secrets.host }}" << END
+          ssh -i ~/.ssh/vm "${{ secrets.vm_user }}@${{ secrets.vm_host }}" << END
             sudo docker stop auspak_${{ inputs.port }}
             sudo docker rm auspak_${{ inputs.port }}
             cd ~
@@ -54,11 +58,11 @@ jobs:
 
       - name: Push repo to the host
         run: |
-          scp -i ~/.ssh/vm -r ./* "ubuntu@${{ secrets.host }}:/home/ubuntu/auspak_${{ inputs.port }}"
+          scp -i ~/.ssh/vm -r ./* "${{ secrets.vm_user }}@${{ secrets.vm_host }}:${{ secrets.vm_home_path }}/auspak_${{ inputs.port }}"
 
       - name: Run the container
         run: |
-          ssh -i ~/.ssh/vm "ubuntu@${{ secrets.host }}" << END
+          ssh -i ~/.ssh/vm "${{ secrets.vm_user }}@${{ secrets.vm_host }}" << END
             cd ~/auspak_${{ inputs.port }}
             sudo docker build -t auspak-image --target app .
             sudo docker run -d --name=auspak_${{ inputs.port }} -e SUPABASE_URL=${{ secrets.supabase_url }} -e SUPABASE_KEY=${{ secrets.supabase_key }} -e AUSPAK_PORT=${{ inputs.port }} -e GRAPHOPPER_API_KEY=${{ secrets.graphhopper_api_key }} -p ${{ inputs.port }}:${{ inputs.port }} auspak-image
