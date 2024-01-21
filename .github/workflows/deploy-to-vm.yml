@@ -56,7 +56,7 @@ jobs:
 
       - name: Push repo to the host
         run: |
-          scp -i ~/.ssh/vm -r ./* "${{ secrets.vm_user }}@${{ secrets.vm_host }}:/home/ubuntu/auspak_${{ inputs.port }}"
+          scp -i ~/.ssh/vm -r ./* "${{ secrets.vm_user }}@${{ secrets.vm_host }}:/home/${{ secrets.vm_user }}/auspak_${{ inputs.port }}"
 
       - name: Run the container
         run: |
