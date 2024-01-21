@@ -10,7 +10,7 @@ jobs:
     name: Deploy to dev environment
     with:
       environment: development
-      port: 8001
+      port: 443
     secrets:
       vm_ssh_key: ${{ secrets.VM_SSH_KEY }}
       vm_host: ${{ secrets.VM_HOST }}
