@@ -125,10 +125,17 @@ def get_nearest_bus_id(nearest_stop):
 
 
 # Define the endpoint for listing all active stops
-@router.get("/stops")
+@router.get("/list")
 def list_stops(current_user: User = Depends(get_current_user)):
-    # Query the stop table with the current user id
-    response = supabase.table("stops").select("*").eq("is_active", True).execute()
+    if current_user.entity == UserEntity.driver:
+        response = supabase.rpc('stops_for_driver', {"driver_id": current_user.id}).execute()
+    else:
+        query = supabase.table("stops").select("*").eq("is_active", True)
+        if current_user.entity == UserEntity.passenger:
+            response = query.eq("user_id", current_user.id).execute()
+        else:
+            # manager
+            response = query.in_("entity", ["parcel_pickup", "parcel_dropoff"]).execute()
     # Check if the response has data
     if response.data:
         # Return the list of stops as Stop objects
