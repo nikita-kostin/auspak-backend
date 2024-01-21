@@ -47,7 +47,7 @@ def stop_bus(current_user: User = Depends(get_current_user)):
     # Set is_active to False
     # Implicit check whether user is a driver and has active buses
     response = supabase.table("buses").update({"is_active": False}).eq("driver_id", current_user.id).execute()
-    return {response}
+    return {"data": response.data}
 
 
 @router.post("/next")
@@ -132,6 +132,7 @@ def list_next_stops(current_user: User = Depends(get_current_user), num_next_sto
 
     Returns:
     {
+        "bus_id": int,
         "current_stop": dict,
         "next_stops": list[dict]
     }
@@ -147,7 +148,7 @@ def list_next_stops(current_user: User = Depends(get_current_user), num_next_sto
         .eq("is_active", True)\
         .execute()
     if not response.data:
-        return {"current_stop": None, "next_stops": None}
+        return {"bus_id": None, "current_stop": None, "next_stops": None}
     bus = response.data[0]
     bus_id = bus["bus_id"]
     if bus_id not in bus_routes:
@@ -173,7 +174,7 @@ def build_next_stops(bus_id: int, current_stop_i: int = 0, num_next_stops: int =
             bus_route.reverse()
             # bus_route must contain at least one static stop
             current_stop_i = 1 % len(bus_route)
-    result = {"current_stop": next_stops[0], "next_stops": next_stops[1:]}
+    result = {"bus_id": bus_id, "current_stop": next_stops[0], "next_stops": next_stops[1:]}
     build_next_stops_cache[bus_id] = result
     return result
 
