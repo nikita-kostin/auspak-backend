@@ -62,63 +62,32 @@ def create_chat(user_id: int, current_user: User = Depends(get_current_user)):
         )
 
 
-def get_chat_info(current_user: User, chat_as_model: Chat) -> Dict[str, Any]:
-    recipient_id = chat_as_model.user_id if current_user.entity == UserEntity.driver else chat_as_model.driver_id
-    recipient_as_supabase_response = supabase.table("users").select("*").eq("id", recipient_id).execute()
-    # If the user cannot be found, we should fail to indicate data inconsistency
-    if not recipient_as_supabase_response.data:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Could not fetch user with id=${recipient_id} from database"
-        )
+def supabase_chat_to_response(current_user: User, chat: Dict[str, Any]) -> Dict[str, Any]:
+    last_message = "" if chat["last_message"] is None else chat["last_message"]
+    last_message_sender_id = "" if chat["last_message_sender_id"] is None else chat["last_message_sender_id"]
+    if last_message_sender_id == current_user.id:
+        last_message = "You: " + last_message
 
-    recipient_as_model = User(**recipient_as_supabase_response.data[0])
-    message_as_supabase_response = supabase \
-        .table("messages") \
-        .select("*") \
-        .eq("chat_id", chat_as_model.id) \
-        .order("created_at") \
-        .execute()
+    last_message_time = "" if chat["ts"] is None else chat["ts"]
 
-    chat_to_return = {
-        "id": chat_as_model.id,
-        "name": recipient_as_model.first_name + " " + recipient_as_model.last_name,
-        "last_message": "",
-        "user_type": recipient_as_model.entity,
-        "time": ""
+    return {
+        "id": chat["id"],
+        "name": chat["name"],
+        "last_message": last_message,
+        "user_type": chat["user_type"],
+        "time": last_message_time
     }
-
-    # No message found in chat
-    if not message_as_supabase_response.data:
-        return chat_to_return
-
-    message_as_model = Message(**message_as_supabase_response.data[-1])
-
-    # Construct text to show
-    if message_as_model.sender_id == current_user.id:
-        chat_to_return["last_message"] += "You: "
-    chat_to_return["last_message"] += message_as_model.text
-
-    # Construct message time in the following format: "HH:MM"
-    dt = datetime.fromisoformat(message_as_model.created_at)
-    chat_to_return["time"] = f"{dt.hour}:{dt.minute}"
-
-    return chat_to_return
 
 
 # Define the endpoint for listing chats
 @router.get("/")
 def list_chats(current_user: User = Depends(get_current_user)):
-    # Query the chat table with the current user id
-    user_id_field = "driver_id" if current_user.entity == UserEntity.driver else "user_id"
-    query = supabase.table("chats").select("*").eq(user_id_field, current_user.id)
-    chats_as_supabase_response = query.execute()
+    response = supabase.rpc("get_chats", {"caller_id": current_user.id}).execute()
 
-    if not chats_as_supabase_response.data:
+    if not response:
         return []
 
-    chats_as_models = [Chat(**chat) for chat in chats_as_supabase_response.data]
-    return [get_chat_info(current_user, chat_as_model) for chat_as_model in chats_as_models]
+    return [supabase_chat_to_response(current_user, chat) for chat in response.data]
 
 
 @router.get("/history/{chat_id}")
