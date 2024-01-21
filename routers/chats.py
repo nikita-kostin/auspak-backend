@@ -1,4 +1,6 @@
+from datetime import datetime
 from fastapi import status, APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from typing import Any, Dict
 
 from dependencies import get_current_user
 from models import supabase, Chat, Message, User, UserEntity
@@ -60,20 +62,63 @@ def create_chat(user_id: int, current_user: User = Depends(get_current_user)):
         )
 
 
+def get_chat_info(current_user: User, chat_as_model: Chat) -> Dict[str, Any]:
+    recipient_id = chat_as_model.user_id if current_user.entity == UserEntity.driver else chat_as_model.driver_id
+    recipient_as_supabase_response = supabase.table("users").select("*").eq("id", recipient_id).execute()
+    # If the user cannot be found, we should fail to indicate data inconsistency
+    if not recipient_as_supabase_response.data:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Could not fetch user with id=${recipient_id} from database"
+        )
+
+    recipient_as_model = User(**recipient_as_supabase_response.data[0])
+    message_as_supabase_response = supabase \
+        .table("messages") \
+        .select("*") \
+        .eq("chat_id", chat_as_model.id) \
+        .order("created_at") \
+        .execute()
+
+    chat_to_return = {
+        "id": chat_as_model.id,
+        "name": recipient_as_model.first_name + " " + recipient_as_model.last_name,
+        "last_message": "",
+        "user_type": recipient_as_model.entity,
+        "time": ""
+    }
+
+    # No message found in chat
+    if not message_as_supabase_response.data:
+        return chat_to_return
+
+    message_as_model = Message(**message_as_supabase_response.data[-1])
+
+    # Construct text to show
+    if message_as_model.sender_id == current_user.id:
+        chat_to_return["last_message"] += "You: "
+    chat_to_return["last_message"] += message_as_model.text
+
+    # Construct message time in the following format: "HH:MM"
+    dt = datetime.fromisoformat(message_as_model.created_at)
+    chat_to_return["time"] = f"{dt.hour}:{dt.minute}"
+
+    return chat_to_return
+
+
 # Define the endpoint for listing chats
 @router.get("/")
 def list_chats(current_user: User = Depends(get_current_user)):
     # Query the chat table with the current user id
-    query = supabase.table("chats").select("*")
-    query = query.eq("driver_id" if current_user.entity == UserEntity.driver else "user_id", current_user.id)
-    response = query.execute()
-    # Check if the response has data
-    if response.data:
-        # Return the list of chats as Chat objects
-        return [Chat(**chat) for chat in response.data]
-    else:
-        # Return an empty list if no chats are found
+    user_id_field = "driver_id" if current_user.entity == UserEntity.driver else "user_id"
+    query = supabase.table("chats").select("*").eq(user_id_field, current_user.id)
+    chats_as_supabase_response = query.execute()
+
+    if not chats_as_supabase_response.data:
         return []
+
+    chats_as_models = [Chat(**chat) for chat in chats_as_supabase_response.data]
+    return [get_chat_info(current_user, chat_as_model) for chat_as_model in chats_as_models]
 
 
 @router.get("/history/{chat_id}")
@@ -85,30 +130,6 @@ def get_chat_history(chat_id: int, current_user: User = Depends(get_current_user
         if current_user.id in [chat.driver_id, chat.user_id]:
             response = supabase.table("messages").select("*").eq("chat_id", chat_id).execute()
             return response.data
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="User is not authorised to access the chat",
-            )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No chat with given id found",
-        )
-
-
-EMPTY_MESSAGE = Message(id=0, chat_id=0, sender_id=0, text="")
-
-
-@router.get("/{chat_id}/last_message")
-def get_last_message(chat_id: int, current_user: User = Depends(get_current_user)):
-    response = supabase.table("chats").select("*").eq("id", chat_id).execute()
-    if response.data:
-        # Get the chat as a Chat object
-        chat = Chat(**response.data[0])
-        if current_user.id in [chat.driver_id, chat.user_id]:
-            response = supabase.table("messages").select("*").eq("chat_id", chat_id).execute()
-            return response.data[0] if response.data else EMPTY_MESSAGE
         else:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

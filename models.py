@@ -44,6 +44,7 @@ class Chat(BaseModel):
 
 class Message(BaseModel):
     id: int
+    created_at: str
     chat_id: int
     sender_id: int
     text: str
