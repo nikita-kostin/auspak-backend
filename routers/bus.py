@@ -47,7 +47,7 @@ def stop_bus(current_user: User = Depends(get_current_user)):
     # Set is_active to False
     # Implicit check whether user is a driver and has active buses
     response = supabase.table("buses").update({"is_active": False}).eq("driver_id", current_user.id).execute()
-    return {"data" : response.data}
+    return {"data": response.data}
 
 
 @router.post("/next")
