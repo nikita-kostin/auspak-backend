@@ -12,8 +12,9 @@ jobs:
       environment: development
       port: 8001
     secrets:
-      ssh_key: ${{ secrets.VM_SSH_KEY }}
-      host: ${{ secrets.VM_HOST }}
+      vm_ssh_key: ${{ secrets.VM_SSH_KEY }}
+      vm_host: ${{ secrets.VM_HOST }}
+      vm_user: ${{ secrets.VM_USER }}
       supabase_url: ${{ secrets.SUPABASE_URL }}
       supabase_key: ${{ secrets.SUPABASE_KEY }}
       graphhopper_api_key: ${{ secrets.GRAPHOPPER_API_KEY }}
