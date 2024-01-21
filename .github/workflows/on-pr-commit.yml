@@ -12,8 +12,8 @@ jobs:
       environment: development
       port: 8001
     secrets:
-      ssh_key: ${{ secrets.ORACLE_SSH_KEY }}
-      host: ${{ secrets.ORACLE_HOST }}
+      ssh_key: ${{ secrets.VM_SSH_KEY }}
+      host: ${{ secrets.VM_HOST }}
       supabase_url: ${{ secrets.SUPABASE_URL }}
       supabase_key: ${{ secrets.SUPABASE_KEY }}
       graphhopper_api_key: ${{ secrets.GRAPHOPPER_API_KEY }}
