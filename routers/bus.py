@@ -136,17 +136,18 @@ def list_next_stops(current_user: User = Depends(get_current_user), num_next_sto
         "next_stops": list[dict]
     }
     """
-    # Implicit check whether user is a driver and has active buses
+    if current_user.entity != UserEntity.driver:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User is not a driver",
+        )
     response = supabase.table("buses")\
         .select("*")\
         .eq("driver_id", current_user.id)\
         .eq("is_active", True)\
         .execute()
     if not response.data:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No active buses associated with the user",
-        )
+        return {"current_stop": None, "next_stops": None}
     bus = response.data[0]
     bus_id = bus["bus_id"]
     if bus_id not in bus_routes:
