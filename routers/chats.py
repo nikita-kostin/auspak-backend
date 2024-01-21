@@ -1,9 +1,8 @@
-from datetime import datetime
 from fastapi import status, APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from typing import Any, Dict
 
 from dependencies import get_current_user
-from models import supabase, Chat, Message, User, UserEntity
+from models import supabase, Chat, User, UserEntity
 from routers.connection_handler import connection_handler
 
 
