@@ -3,7 +3,8 @@ from typing import Any, Dict, Iterable
 
 from dependencies import get_current_user
 from models import supabase, Stop, User, UserEntity, StopEntity
-from routers.bus import update_route
+from routers.bus import update_route, bus_routes
+from routers.algorithm import tsp_algorithm
 
 
 router = APIRouter(prefix="/stops", tags=["stops"])
@@ -127,22 +128,32 @@ def get_nearest_bus_id(nearest_stop):
 # Define the endpoint for listing all active stops
 @router.get("/list")
 def list_stops(current_user: User = Depends(get_current_user)):
-    if current_user.entity == UserEntity.driver:
-        response = supabase.rpc('stops_for_driver', {"driver_id": current_user.id}).execute()
+    if current_user.entity == UserEntity.manager:
+        busesList = supabase.table("buses")\
+            .select("*")\
+            .eq("is_active", True)\
+            .execute().data
+        stopsList = supabase.table("stops")\
+            .select("*")\
+            .eq("is_active", True)\
+            .in_("entity", ["parcel_pickup", "parcel_dropoff"])\
+            .execute().data
     else:
-        query = supabase.table("stops").select("*").eq("is_active", True)
-        if current_user.entity == UserEntity.passenger:
-            response = query.eq("user_id", current_user.id).execute()
+        if current_user.entity == UserEntity.driver:
+            busesList = supabase.table("buses")\
+                .select("*")\
+                .eq("is_active", True)\
+                .eq("driver_id", current_user.id).execute().data
         else:
-            # manager
-            response = query.in_("entity", ["parcel_pickup", "parcel_dropoff"]).execute()
-    # Check if the response has data
-    if response.data:
-        # Return the list of stops as Stop objects
-        return [Stop(**stop) for stop in response.data]
-    else:
-        # Return an empty list if no stops are found
-        return []
+            # passenger
+            busesList = supabase.rpc('bus_for_passenger', {"user_id": current_user.id}).execute().data
+        if not busesList:
+            return {"buses": [], "stops": []}
+        bus_id = busesList[0]["bus_id"]
+        if bus_id not in bus_routes:
+            bus_routes[bus_id] = tsp_algorithm(bus_id=bus_id)["stops"]
+        stopsList = bus_routes[bus_id]
+    return {"buses": busesList, "stops": stopsList}
 
 
 # TODO doesn't need to be an endpoint, only used inside create_stop

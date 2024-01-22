@@ -31,7 +31,9 @@ def start_bus(current_user: User = Depends(get_current_user), bus_id: int = 0):
     response = supabase.table("buses").insert([{
         "bus_id": bus_id,
         "driver_id": current_user.id,
-        "stop_number": 0
+        "stop_number": 0,
+        "lat": bus_routes[bus_id][0]["lat"],
+        "long": bus_routes[bus_id][0]["long"]
     }]).execute()
     if response.data:
         return build_next_stops(bus_id, cached=False)
@@ -77,7 +79,7 @@ def move_to_next_stop(current_user: User = Depends(get_current_user)):
     current_stop = bus_route[current_stop_i]
     if current_stop["entity"] != StopEntity.static.value:
         response = supabase.table("stops").update({"is_active": False}).eq("stop_id", current_stop["stop_id"]).execute()
-        del bus_route[current_stop]
+        del bus_route[current_stop_i]
         next_stop_i = current_stop_i
     else:
         next_stop_i = current_stop_i + 1
@@ -87,6 +89,8 @@ def move_to_next_stop(current_user: User = Depends(get_current_user)):
         bus_route.reverse()
         update_dict["direction"] = not direction
     update_dict["stop_number"] = next_stop_i
+    update_dict["lat"] = bus_route[next_stop_i]["lat"]
+    update_dict["long"] = bus_route[next_stop_i]["long"]
     response = supabase.table("buses").update(update_dict).eq("id", row_id).execute()
     return build_next_stops(bus_id, current_stop_i=next_stop_i, cached=False)
 
@@ -217,10 +221,10 @@ def list_bus_lines(current_user: User = Depends(get_current_user)):
     # Fetch all bus_ids from bus_stop_mappings
     response = supabase.table("bus_stop_mappings").select("bus_id").execute()
     bus_ids_in_mappings = [item["bus_id"] for item in response.data]
-    # Fetch all bus_ids from buses
-    response = supabase.table("buses").select("bus_id").execute()
+    # Fetch all active bus_ids from buses
+    response = supabase.table("buses").select("bus_id").eq("is_active", True).execute()
     bus_ids_in_buses = [item["bus_id"] for item in response.data]
-    # Find bus_ids that are in mappings but not in buses
+    # Find bus_ids that are in mappings but not in active buses
     bus_ids_not_in_buses = [bus_id for bus_id in bus_ids_in_mappings if bus_id not in bus_ids_in_buses]
     bus_ids_in_buses.sort
     return {"buses": set(bus_ids_not_in_buses)}
