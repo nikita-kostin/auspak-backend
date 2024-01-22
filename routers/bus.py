@@ -226,5 +226,5 @@ def list_bus_lines(current_user: User = Depends(get_current_user)):
     bus_ids_in_buses = [item["bus_id"] for item in response.data]
     # Find bus_ids that are in mappings but not in active buses
     bus_ids_not_in_buses = [bus_id for bus_id in bus_ids_in_mappings if bus_id not in bus_ids_in_buses]
-    bus_ids_in_buses.sort
-    return {"buses": set(bus_ids_not_in_buses)}
+    bus_ids_not_in_buses.sort
+    return {"lines": set(bus_ids_not_in_buses)}
