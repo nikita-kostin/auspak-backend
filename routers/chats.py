@@ -130,7 +130,6 @@ async def open_chat(websocket: WebSocket, chat_id: int, current_user: User = Dep
             connection_handler.register(chat_id, current_user.id, websocket)
             existing_messages = supabase.table("messages").select("*").eq("chat_id", chat_id).execute()
             for message in existing_messages.data:
-                message["is_sender"] = message["sender_id"] == current_user.id
                 await websocket.send_json(message)
             # Receive messages from the websocket
             while True:

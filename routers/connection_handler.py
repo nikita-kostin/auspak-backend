@@ -1,6 +1,8 @@
 from fastapi import WebSocket
 from typing import Dict
 
+from models import Message
+
 
 class ConnectionHandler(object):
 
@@ -13,9 +15,8 @@ class ConnectionHandler(object):
         self.active_sockets.setdefault(chat_id, dict())
         self.active_sockets[chat_id][user_id] = websocket
 
-    async def broadcast(self, chat_id: int, message: Dict) -> None:
-        for user_id, websocket in self.active_sockets[chat_id].items():
-            message["is_sender"] = message["sender_id"] == user_id
+    async def broadcast(self, chat_id: int, message: Message) -> None:
+        for websocket in self.active_sockets[chat_id].values():
             await websocket.send_json(message)
 
     def close(self, chat_id: int, user_id: int) -> None:
