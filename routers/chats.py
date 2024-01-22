@@ -126,7 +126,7 @@ async def open_chat(websocket: WebSocket, chat_id: int, current_user: User = Dep
         # Check if the current user is either the driver or the user of the chat
         print(current_user.id, chat)
         if current_user.id in [chat.driver_id, chat.user_id]:
-            print(f"user {current_user.user_id} entered the chat")
+            print(f"user {current_user.id} entered the chat")
             connection_handler.register(chat_id, current_user.id, websocket)
             existing_messages = supabase.table("messages").select("*").eq("chat_id", chat_id).execute()
             for message in existing_messages.data:
@@ -136,7 +136,7 @@ async def open_chat(websocket: WebSocket, chat_id: int, current_user: User = Dep
                 # Try to receive a message
                 try:
                     text = await websocket.receive_text()
-                    print(f"received {text} from {current_user.user_id}")
+                    print(f"received {text} from {current_user.id}")
                 # Close the websocket if the connection is closed
                 except WebSocketDisconnect:
                     await websocket.close()
