@@ -86,6 +86,16 @@ def update_settings(settings: Settings, current_user: User = Depends(get_current
     # Return the updated settings
     return settings
 
+@router.get("/settings")
+def get_settings(current: User = Depends(get_current_user)):
+    response = supabase.table("users").select("*").eq("id", current.id).execute()
+    if response.data:
+        return Settings(**response.data[0])
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
 
 @router.get("/me")
 def me(current_user: User = Depends(get_current_user)):
