@@ -144,12 +144,21 @@ def list_stops(current_user: User = Depends(get_current_user)):
                 .select("*")\
                 .eq("is_active", True)\
                 .eq("driver_id", current_user.id).execute().data
+            if not busesList:
+                return {"buses": [], "stops": []}
+            bus_id = busesList[0]["bus_id"]
         else:
             # passenger
-            busesList = supabase.rpc('bus_for_passenger', {"user_id": current_user.id}).execute().data
-        if not busesList:
-            return {"buses": [], "stops": []}
-        bus_id = busesList[0]["bus_id"]
+            busIdList = supabase.rpc('bus_for_passenger', {"p_user_id": current_user.id}).execute().data
+            if not busIdList:
+                return {"buses": [], "stops": []}
+            bus_id = busIdList[0]["bus_id"]
+            busesList = supabase.table("buses")\
+                .select("*")\
+                .eq("is_active", True)\
+                .eq("bus_id", bus_id).execute().data
+            if not busesList:
+                return {"buses": [{"bus_id": bus_id, "lat": 0, "long": 0}], "stops": []}
         if bus_id not in bus_routes:
             bus_routes[bus_id] = tsp_algorithm(bus_id=bus_id)["stops"]
         stopsList = bus_routes[bus_id]
