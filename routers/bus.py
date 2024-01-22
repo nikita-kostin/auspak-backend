@@ -32,8 +32,8 @@ def start_bus(current_user: User = Depends(get_current_user), bus_id: int = 0):
         "bus_id": bus_id,
         "driver_id": current_user.id,
         "stop_number": 0,
-        "lat" : bus_routes[bus_id][0]["lat"],
-        "long" : bus_routes[bus_id][0]["long"]
+        "lat": bus_routes[bus_id][0]["lat"],
+        "long": bus_routes[bus_id][0]["long"]
     }]).execute()
     if response.data:
         return build_next_stops(bus_id, cached=False)
