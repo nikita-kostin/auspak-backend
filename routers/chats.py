@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import status, APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from starlette.websockets import WebSocketState
 from typing import Any, Dict
@@ -68,7 +69,7 @@ def supabase_chat_to_response(current_user: User, chat: Dict[str, Any]) -> Dict[
     if last_message_sender_id == current_user.id:
         last_message = "You: " + last_message
 
-    last_message_time = "" if chat["ts"] is None else chat["ts"]
+    last_message_time = "" if chat["ts"] is None else datetime.fromisoformat(chat["ts"]).strftime("%H:%M")
 
     return {
         "id": chat["id"],
