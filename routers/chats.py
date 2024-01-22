@@ -142,7 +142,7 @@ async def open_chat(websocket: WebSocket, chat_id: int, current_user: User = Dep
                 except WebSocketDisconnect:
                     if websocket.client_state != WebSocketState.DISCONNECTED:
                         await websocket.close()
-                    connection_handler.close(chat_id, current_user.id)
+                        connection_handler.close(chat_id, current_user.id)
                     break
                 # Append the message to the chat messages
                 response = supabase.table("messages").insert({
