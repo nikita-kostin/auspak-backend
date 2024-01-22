@@ -86,6 +86,12 @@ def update_settings(settings: Settings, current_user: User = Depends(get_current
     # Return the updated settings
     return settings
 
+@router.put("/change_password")
+def update_password(password: str, current_user: User = Depends(get_current_user)):
+    supabase.table("users").update({"password": password}).eq("id", current_user.id).execute()
+    # Return the updated settings
+    return {"status": "success"}
+
 
 @router.get("/settings")
 def get_settings(current: User = Depends(get_current_user)):
