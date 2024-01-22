@@ -85,7 +85,7 @@ def move_to_next_stop(current_user: User = Depends(get_current_user)):
         next_stop_i = current_stop_i + 1
     update_dict = dict()
     if next_stop_i == len(bus_route):
-        next_stop_i = next_stop_i % len(bus_route)
+        next_stop_i = (next_stop_i + 1) % len(bus_route)
         bus_route.reverse()
         update_dict["direction"] = not direction
     update_dict["stop_number"] = next_stop_i
