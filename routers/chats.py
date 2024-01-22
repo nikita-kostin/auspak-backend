@@ -1,4 +1,5 @@
 from fastapi import status, APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from starlette.websockets import WebSocketState
 from typing import Any, Dict
 
 from dependencies import get_current_user
@@ -139,7 +140,8 @@ async def open_chat(websocket: WebSocket, chat_id: int, current_user: User = Dep
                     print(f"received {text} from {current_user.id}")
                 # Close the websocket if the connection is closed
                 except WebSocketDisconnect:
-                    await websocket.close()
+                    if websocket.client_state != WebSocketState.DISCONNECTED:
+                        await websocket.close()
                     connection_handler.close(chat_id, current_user.id)
                     break
                 # Append the message to the chat messages
@@ -152,7 +154,9 @@ async def open_chat(websocket: WebSocket, chat_id: int, current_user: User = Dep
                 await connection_handler.broadcast(chat_id, response.data[0])
         else:
             # Close the websocket if the current user is not authorized
-            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            if websocket.client_state != WebSocketState.DISCONNECTED:
+                await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
     else:
         # Close the websocket if the chat id is invalid
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        if websocket.client_state != WebSocketState.DISCONNECTED:
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
