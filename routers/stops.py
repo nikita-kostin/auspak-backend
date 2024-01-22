@@ -140,7 +140,10 @@ def list_stops(current_user: User = Depends(get_current_user)):
             .execute().data
     else:
         if current_user.entity == UserEntity.driver:
-            busesList = supabase.table("buses").select("*").eq("is_active", True).eq("driver_id", current_user.id).execute().data
+            busesList = supabase.table("buses")\
+                .select("*")\
+                .eq("is_active", True)\
+                .eq("driver_id", current_user.id).execute().data
         else:
             # passenger
             busesList = supabase.rpc('bus_for_passenger', {"user_id": current_user.id}).execute().data
