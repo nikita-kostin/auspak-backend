@@ -183,27 +183,6 @@ def build_next_stops(bus_id: int, current_stop_i: int = 0, num_next_stops: int =
     return result
 
 
-# # List users that requested stop of this bus
-# @router.get("/users")
-# def list_users(current_user: User = Depends(get_current_user), query: str = "", entity: UserEntity = None):
-#     if current_user.entity != UserEntity.driver:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="Only drivers can view user list",
-#         )
-#     if entity == UserEntity.driver:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="Can't chat with drivers",
-#         )
-#     users = supabase.rpc('get_users_for_driver', {"p_driver_id": current_user.id}).execute().data
-#     if query != "":
-#         users = [user for user in users if filter_user(user, query)]
-#     if entity is not None:
-#         users = [user for user in users if user["entity"] == entity.value]
-#     return {"users": users}
-
-
 # List bus lines that are not taken by any driver
 @router.get("/lines")
 def list_bus_lines(current_user: User = Depends(get_current_user)):
