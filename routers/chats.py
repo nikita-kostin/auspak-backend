@@ -127,7 +127,7 @@ def get_chat_history(chat_id: int, current_user: User = Depends(get_current_user
 # List users
 @router.get("/users")
 def list_users(current_user: User = Depends(get_current_user), query: str = "", entity: UserEntity = None):
-    users = supabase.rpc('chat_users', {}).execute().data
+    users = supabase.rpc('chat_users', {"p_user_id": current_user.id}).execute().data
     # if query != "":
     #     users = [user for user in users if filter_user(user, query)]
     # unique_user_ids = set()
