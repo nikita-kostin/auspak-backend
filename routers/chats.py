@@ -88,7 +88,7 @@ def get_chat_history(chat_id: int, current_user: User = Depends(get_current_user
             )
         full_name = f'{response.data[0]["first_name"]} {response.data[0]["last_name"]}'
         response = supabase.table("messages").select("*").eq("chat_id", chat_id).execute()
-        return {"name" : full_name, "data" : response.data}
+        return {"name": full_name, "data": response.data}
     else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
