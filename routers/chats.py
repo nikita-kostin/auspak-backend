@@ -126,8 +126,8 @@ def list_users(current_user: User = Depends(get_current_user), query: str = "", 
     if query != "":
         users = [user for user in users if filter_user(user, query)]
     unique_user_ids = set()
-    users = [user for user in users if\
-        user["user_id"] not in unique_user_ids and (unique_user_ids.add(user["user_id"]) or True)]
+    users = [user for user in users if
+                user["user_id"] not in unique_user_ids and (unique_user_ids.add(user["user_id"]) or True)]
     if entity is not None:
         users = [user for user in users if user["entity"] == entity.value]
     return {"users": users}
