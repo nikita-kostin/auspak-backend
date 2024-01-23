@@ -112,6 +112,31 @@ def get_chat_history(chat_id: int, current_user: User = Depends(get_current_user
         )
 
 
+def filter_user(user: dict, query: str):
+    first_last_match = f"{user['first_name']} {user['last_name']}".startswith(query)
+    last_first_match = f"{user['last_name']} {user['first_name']}".startswith(query)
+    stop_name_match = user["stop_name"].startswith(query)
+    return first_last_match or last_first_match or stop_name_match
+
+
+def unique_user(user: dict, unique_user_ids: set):
+    is_not_inserted = user["user_id"] not in unique_user_ids
+    return is_not_inserted and (unique_user_ids.add(user["user_id"]) or True)
+
+
+# List users
+@router.get("/users")
+def list_users(current_user: User = Depends(get_current_user), query: str = "", entity: UserEntity = None):
+    users = supabase.rpc('chat_users', {}).execute().data
+    if query != "":
+        users = [user for user in users if filter_user(user, query)]
+    unique_user_ids = set()
+    users = [user for user in users if unique_user(user, unique_user_ids)]
+    if entity is not None:
+        users = [user for user in users if user["entity"] == entity.value]
+    return {"users": users}
+
+
 # Define the websocket endpoint for opening a chat
 @router.websocket("/{chat_id}")
 async def open_chat(websocket: WebSocket, chat_id: int, current_user: User = Depends(get_current_user)):
